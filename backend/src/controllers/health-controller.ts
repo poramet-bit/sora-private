@@ -109,34 +109,35 @@ export class HealthController {
     const raw = await this.repo.findAnalysisById(id)
     if (!raw) return c.json({ error: 'Analysis not found' }, 404)
 
-    // D1 returns snake_case — map to camelCase for frontend
+    // D1 returns snake_case columns — map to camelCase for frontend
+    const r: any = raw
     const analysis: any = {
-      id: raw.id,
-      healthRecordId: raw.healthRecordId,
-      userId: raw.userId,
-      riskLevel: raw.riskLevel,
-      riskScore: raw.riskScore,
-      bmi: raw.bmi,
-      recommendations: raw.recommendations,
-      factors: raw.factors,
-      createdAt: raw.createdAt,
+      id: r.id,
+      healthRecordId: r.health_record_id || r.healthRecordId,
+      userId: r.user_id || r.userId,
+      riskLevel: r.risk_level || r.riskLevel,
+      riskScore: r.risk_score ?? r.riskScore,
+      bmi: r.bmi,
+      recommendations: r.recommendations,
+      factors: r.factors,
+      createdAt: r.created_at || r.createdAt,
     }
 
     let record: any = null
     try {
-      const rec = await this.repo.findRecordById(raw.healthRecordId)
+      const rec: any = await this.repo.findRecordById(analysis.healthRecordId)
       if (rec) {
         record = {
           id: rec.id,
-          userId: rec.userId,
+          userId: rec.user_id || rec.userId,
           age: rec.age,
           gender: rec.gender,
           weight: rec.weight,
           height: rec.height,
           symptoms: rec.symptoms,
-          medicalHistory: rec.medicalHistory,
-          imageUrl: rec.imageUrl,
-          createdAt: rec.createdAt,
+          medicalHistory: rec.medical_history || rec.medicalHistory || '',
+          imageUrl: rec.image_url || rec.imageUrl,
+          createdAt: rec.created_at || rec.createdAt,
         }
       }
     } catch (e) {
@@ -144,8 +145,8 @@ export class HealthController {
     }
 
     // Parse factors and recommendations back to arrays
-    const factors = raw.factors ? raw.factors.split('\n').filter(Boolean) : []
-    const recommendations = raw.recommendations ? raw.recommendations.split('\n').filter(Boolean) : []
+    const factors = analysis.factors ? analysis.factors.split('\n').filter(Boolean) : []
+    const recommendations = analysis.recommendations ? analysis.recommendations.split('\n').filter(Boolean) : []
 
     return c.json({
       data: {
