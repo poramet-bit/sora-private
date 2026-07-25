@@ -45,8 +45,9 @@ export default function Result() {
   const { analysis, record } = data
   const riskColor: Record<string, string> = { low: 'var(--success)', moderate: 'var(--warning)', high: 'var(--danger)', critical: 'var(--critical)' }
   const color = riskColor[analysis.riskLevel] || 'var(--text-muted)'
-  const recommendations = data.recommendations || analysis.recommendations?.split('\n').filter(Boolean) || []
-  const factors = data.factors || analysis.factors?.split('\n').filter(Boolean) || []
+  const recommendations = data.recommendations || []
+  const factors = data.factors || []
+  const aiSummary = data.aiSummary || ''
 
   return (
     <div>
@@ -57,8 +58,8 @@ export default function Result() {
 
       {/* ผลสรุป */}
       <div className="result-box" style={{ background: `${color}15`, border: `2px solid ${color}`, textAlign: 'center' }}>
-        <h2 style={{ color, fontSize: '1.8rem', marginBottom: '0.5rem' }}>{riskLabels[analysis.riskLevel]}</h2>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>{riskDesc[analysis.riskLevel]}</p>
+        <h2 style={{ color, fontSize: '1.8rem', marginBottom: '0.5rem' }}>{riskLabels[analysis.riskLevel] || analysis.riskLevel}</h2>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>{riskDesc[analysis.riskLevel] || ''}</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem' }}>
           <div>
             <div style={{ fontSize: '2.5rem', fontWeight: 800, color }}>{analysis.riskScore}</div>
@@ -71,6 +72,14 @@ export default function Result() {
         </div>
       </div>
 
+      {/* AI Summary */}
+      {aiSummary && (
+        <div className="card" style={{ marginTop: '1rem', background: 'linear-gradient(135deg, #f0f4ff 0%, #fce7f3 100%)' }}>
+          <h3 style={{ marginBottom: '0.75rem' }}>🤖 สรุปจาก AI</h3>
+          <p style={{ lineHeight: '1.6' }}>{aiSummary}</p>
+        </div>
+      )}
+
       {/* ปัจจัยที่พบ */}
       {factors.length > 0 && (
         <div className="card" style={{ marginTop: '1rem' }}>
@@ -82,29 +91,31 @@ export default function Result() {
       )}
 
       {/* คำแนะนำ */}
-      <div className="card" style={{ marginTop: '1rem' }}>
-        <h3 style={{ marginBottom: '0.75rem' }}>💡 คำแนะนำจาก AI</h3>
-        {recommendations.map((r: string, i: number) => (
-          <p key={i} style={{ marginBottom: '0.5rem', padding: '0.5rem', background: '#f0fdf4', borderRadius: '6px', color: '#166534' }}>
-            ✓ {r}
-          </p>
-        ))}
-      </div>
+      {recommendations.length > 0 && (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <h3 style={{ marginBottom: '0.75rem' }}>💡 คำแนะนำจาก AI</h3>
+          {recommendations.map((r: string, i: number) => (
+            <p key={i} style={{ marginBottom: '0.5rem', padding: '0.5rem', background: '#f0fdf4', borderRadius: '6px', color: '#166534' }}>
+              ✓ {r}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* ข้อมูลที่กรอก */}
-      <div className="card" style={{ marginTop: '1rem' }}>
-        <h3 style={{ marginBottom: '0.75rem' }}>📅 ข้อมูลการตรวจ</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
-          <div>🗓️ วันที่: {new Date(record.createdAt).toLocaleString('th-TH')}</div>
-          <div>🎂 อายุ: {record.age} ปี</div>
-          <div>⚖️ น้ำหนัก: {record.weight} กก.</div>
-          <div>📏 ส่วนสูง: {record.height} ซม.</div>
-          <div>🫀 ความดัน: {record.bloodPressureSystolic}/{record.bloodPressureDiastolic}</div>
-          <div>❤️ อัตราหัวใจ: {record.heartRate} ครั้ง/นาที</div>
-          <div>🌡️ อุณหภูมิ: {record.bodyTemperature}°C</div>
-          <div>🩺 อาการ: {record.symptoms?.substring(0, 40)}</div>
+      {record && (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <h3 style={{ marginBottom: '0.75rem' }}>📅 ข้อมูลการตรวจ</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
+            <div>🗓️ วันที่: {new Date(record.createdAt).toLocaleString('th-TH')}</div>
+            <div>🎂 อายุ: {record.age} ปี</div>
+            <div>⚖️ น้ำหนัก: {record.weight} กก.</div>
+            <div>📏 ส่วนสูง: {record.height} ซม.</div>
+            <div>🩺 อาการ: {record.symptoms?.substring(0, 50)}</div>
+            {record.medicalHistory && <div>💊 ประวัติแพทย์: {record.medicalHistory.substring(0, 50)}</div>}
+          </div>
         </div>
-      </div>
+      )}
 
       <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <Link to="/history" className="btn btn-outline">📋 ดูประวัติทั้งหมด</Link>

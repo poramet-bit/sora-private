@@ -58,7 +58,6 @@ export class HealthController {
         factors = aiResult.factors
         aiSummary = aiResult.aiSummary
       } else {
-        // Fallback to rule-based
         const ruleResult = this.ruleBased.analyze(body)
         riskLevel = ruleResult.riskLevel
         riskScore = ruleResult.riskScore
@@ -98,19 +97,36 @@ export class HealthController {
 
   async getHistory(c: Context<{ Bindings: Env }>) {
     const userId = c.req.query("userId") || ""
-    if (userId) {
-      const history = await this.repo.findHistoryByUser(userId)
-      return c.json({ data: history })
+    if (!userId) {
+      return c.json({ data: [] })
     }
-    const history = await this.repo.findAllHistory()
+    const history = await this.repo.findHistoryByUser(userId)
     return c.json({ data: history })
   }
 
   async getAnalysis(c: Context<{ Bindings: Env }>) {
     const id = c.req.param('id')!
-    const result = await this.repo.findAnalysisById(id)
-    if (!result) return c.json({ error: 'Analysis not found' }, 404)
-    const record = await this.repo.findRecordById(result.healthRecordId)
-    return c.json({ data: { analysis: result, record } })
+    const analysis = await this.repo.findAnalysisById(id)
+    if (!analysis) return c.json({ error: 'Analysis not found' }, 404)
+
+    let record: any = null
+    try {
+      record = await this.repo.findRecordById(analysis.healthRecordId)
+    } catch (e) {
+      // record lookup may fail, but we still have analysis data
+    }
+
+    // Parse factors and recommendations back to arrays
+    const factors = analysis.factors ? analysis.factors.split('\n').filter(Boolean) : []
+    const recommendations = analysis.recommendations ? analysis.recommendations.split('\n').filter(Boolean) : []
+
+    return c.json({
+      data: {
+        analysis,
+        record,
+        factors,
+        recommendations,
+      }
+    })
   }
 }
