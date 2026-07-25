@@ -32,10 +32,10 @@ app.get('/ai-test', async (c) => {
   try {
     if (!c.env.AI) return c.json({ error: 'AI binding not available' }, 500)
     const res = await c.env.AI.run('@cf/openai/gpt-oss-20b', {
-      messages: [{ role: 'user', content: 'บอกว่าสวัสดีเป็นภาษาไทย' }],
-      max_tokens: 50,
+      messages: [{ role: 'user', content: 'สวัสดี แนะนำตัวเองสั้นๆ ภาษาไทย' }],
+      max_tokens: 500,
     }) as any
-    return c.json({ ok: true, response: res?.response || JSON.stringify(res).slice(0, 200) })
+    return c.json({ ok: true, raw: res, choices: res?.choices?.[0]?.message ?? null })
   } catch (e: any) {
     return c.json({ error: e.message, name: e.name }, 500)
   }

@@ -34,7 +34,7 @@ export class AIService {
         max_tokens: 1200,
       }) as any
 
-      const text: string = response?.response || response?.result?.response || ''
+      const text: string = response?.response || response?.result?.response || response?.choices?.[0]?.message?.content || ''
       if (!text || text.length < 10) return null
 
       return this.parseAIResponse(text, bmi)
