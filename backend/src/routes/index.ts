@@ -6,6 +6,7 @@ import { HealthController } from '../controllers/health-controller'
 export const apiRoutes = new Hono<{ Bindings: Env }>()
 
 // User / Profile routes
+apiRoutes.post('/login', (c) => new UserController(c).loginByEmail(c))
 apiRoutes.get('/profile/:userId', (c) => new UserController(c).getProfile(c))
 apiRoutes.post('/profile', (c) => new UserController(c).createProfile(c))
 apiRoutes.patch('/profile/:userId', (c) => new UserController(c).updateProfile(c))

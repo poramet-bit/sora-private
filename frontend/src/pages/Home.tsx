@@ -5,12 +5,15 @@ import { useState, useEffect } from 'react'
 export default function Home() {
   const [stats, setStats] = useState({ total: 0, critical: 0 })
 
+  const userId = localStorage.getItem('userId') || ''
+
   useEffect(() => {
-    api.getHistory().then(res => {
+    if (!userId) return
+    api.getHistory(userId).then(res => {
       const items = res.data || []
       setStats({
         total: items.length,
-        critical: items.filter((i: any) => i.riskLevel === 'critical' || i.riskLevel === 'high').length,
+        critical: items.filter((i: any) => i.risk_level === 'critical' || i.risk_level === 'high').length,
       })
     }).catch(() => {})
   }, [])

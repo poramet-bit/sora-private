@@ -18,10 +18,10 @@ export interface HealthRecord {
   gender: Gender
   weight: number
   height: number
-  bloodPressureSystolic: number
-  bloodPressureDiastolic: number
-  heartRate: number
-  bodyTemperature: number
+  bloodPressureSystolic: number | null
+  bloodPressureDiastolic: number | null
+  heartRate: number | null
+  bodyTemperature: number | null
   symptoms: string
   medicalHistory: string
   createdAt: string
@@ -64,10 +64,10 @@ export interface CreateHealthRecordDTO {
   gender: Gender
   weight: number
   height: number
-  bloodPressureSystolic: number
-  bloodPressureDiastolic: number
-  heartRate: number
-  bodyTemperature: number
+  bloodPressureSystolic?: number
+  bloodPressureDiastolic?: number
+  heartRate?: number
+  bodyTemperature?: number
   symptoms: string
   medicalHistory?: string
 }

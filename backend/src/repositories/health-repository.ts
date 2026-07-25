@@ -7,8 +7,8 @@ export class HealthRepository {
     const id = crypto.randomUUID()
     const createdAt = new Date().toISOString()
     await this.db.prepare(`INSERT INTO health_records (id, user_id, image_url, age, gender, weight, height, bp_systolic, bp_diastolic, heart_rate, body_temp, symptoms, medical_history, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-      .bind(id, data.userId, data.imageUrl ?? null, data.age, data.gender, data.weight, data.height, data.bloodPressureSystolic, data.bloodPressureDiastolic, data.heartRate, data.bodyTemperature, data.symptoms, data.medicalHistory ?? '', createdAt).run()
-    return { id, ...data, imageUrl: data.imageUrl ?? null, medicalHistory: data.medicalHistory ?? '', createdAt }
+      .bind(id, data.userId, data.imageUrl ?? null, data.age, data.gender, data.weight, data.height, data.bloodPressureSystolic ?? null, data.bloodPressureDiastolic ?? null, data.heartRate ?? null, data.bodyTemperature ?? null, data.symptoms, data.medicalHistory ?? '', createdAt).run()
+    return { id, ...data, imageUrl: data.imageUrl ?? null, bloodPressureSystolic: data.bloodPressureSystolic ?? null, bloodPressureDiastolic: data.bloodPressureDiastolic ?? null, heartRate: data.heartRate ?? null, bodyTemperature: data.bodyTemperature ?? null, medicalHistory: data.medicalHistory ?? '', createdAt } as HealthRecord
   }
 
   async findRecordById(id: string): Promise<HealthRecord | null> {

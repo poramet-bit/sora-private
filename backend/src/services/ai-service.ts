@@ -45,12 +45,14 @@ export class AIService {
   }
 
   private buildPrompt(data: CreateHealthRecordDTO, bmi: number): string {
+    const bpStr = data.bloodPressureSystolic && data.bloodPressureDiastolic
+      ? `ความดัน: ${data.bloodPressureSystolic}/${data.bloodPressureDiastolic} mmHg\n` : ''
+    const hrStr = data.heartRate ? `อัตราหัวใจ: ${data.heartRate} bpm\n` : ''
+    const tempStr = data.bodyTemperature ? `อุณหภูมิ: ${data.bodyTemperature}°C\n` : ''
     return `วิเคราะห์ความเสี่ยงสุขภาพ:
 อายุ: ${data.age} ปี, เพศ: ${data.gender}
 น้ำหนัก: ${data.weight}kg, ส่วนสูง: ${data.height}cm, BMI: ${bmi.toFixed(1)}
-ความดัน: ${data.bloodPressureSystolic}/${data.bloodPressureDiastolic}
-อัตราหัวใจ: ${data.heartRate}bpm, อุณหภูมิ: ${data.bodyTemperature}C
-อาการ: ${data.symptoms}
+${bpStr}${hrStr}${tempStr}อาการ: ${data.symptoms}
 ประวัติแพทย์: ${data.medicalHistory || 'ไม่มี'}
 
 ตอบเป็น JSON:

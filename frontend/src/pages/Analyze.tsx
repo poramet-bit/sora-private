@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { api, type AnalysisData } from '../services/api'
 
 export default function Analyze() {
@@ -9,16 +9,13 @@ export default function Analyze() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const userId = localStorage.getItem('userId') || ''
+
   const [form, setForm] = useState({
-    userId: localStorage.getItem('userId') || '',
     age: 30,
     gender: 'male',
     weight: 70,
     height: 170,
-    bloodPressureSystolic: 120,
-    bloodPressureDiastolic: 80,
-    heartRate: 72,
-    bodyTemperature: 36.5,
     symptoms: '',
     medicalHistory: '',
   })
@@ -26,8 +23,8 @@ export default function Analyze() {
   const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }))
 
   const submit = async () => {
-    if (!form.userId.trim()) {
-      setError('⚠️ กรุณาสร้างโปรไฟล์ก่อน (ไปที่หน้าโปรไฟล์เพื่อสร้าง)')
+    if (!userId) {
+      setError('⚠️ กรุณาสร้างโปรไฟล์ก่อน (ไปที่หน้าโปรไฟล์)')
       return
     }
     if (!form.symptoms.trim()) {
@@ -37,7 +34,11 @@ export default function Analyze() {
     setLoading(true)
     setError(null)
     try {
-      const data: AnalysisData = { ...form, imageUrl: imageUrl || undefined }
+      const data: AnalysisData = {
+        ...form,
+        userId,
+        imageUrl: imageUrl || undefined,
+      } as any
       const res = await api.analyze(data)
       navigate(`/result/${res.data.analysis.id}`)
     } catch (e: any) {
@@ -64,7 +65,7 @@ export default function Analyze() {
       {/* AI Badge */}
       <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span style={{ fontSize: '1.5rem' }}>🤖</span>
-        <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — คำนวณจาก BMI, ความดัน, อัตราหัวใจ, ไข้, และอาการ</span>
+        <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — คำนวณจาก BMI, อายุ, อาการ และประวัติแพทย์</span>
       </div>
 
       <div className="card">
@@ -74,10 +75,16 @@ export default function Analyze() {
           </div>
         )}
 
-        <div className="form-group">
-          <label>รหัสผู้ใช้ (User ID) *</label>
-          <input value={form.userId} onChange={(e) => set('userId', e.target.value)} placeholder="สร้างจากหน้าโปรไฟล์" />
-        </div>
+        {!userId && (
+          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fcd34d' }}>
+            <p style={{ margin: 0, color: '#92400e' }}>
+              ⚠️ ยังไม่ได้เข้าสู่ระบบ —{' '}
+              <Link to="/profile" style={{ fontWeight: 600, color: '#92400e', textDecoration: 'underline' }}>
+                คลิกที่นี่เพื่อสร้างโปรไฟล์
+              </Link>
+            </p>
+          </div>
+        )}
 
         <div className="form-row-3">
           {numInput('อายุ (ปี)', 'age')}
@@ -94,13 +101,6 @@ export default function Analyze() {
 
         <div className="form-row">
           {numInput('ส่วนสูง (ซม.)', 'height')}
-          {numInput('อัตราการเต้นหัวใจ (ครั้ง/นาที)', 'heartRate')}
-        </div>
-
-        <div className="form-row-3">
-          {numInput('ความดันบน (Systolic)', 'bloodPressureSystolic')}
-          {numInput('ความดันล่าง (Diastolic)', 'bloodPressureDiastolic')}
-          {numInput('อุณหภูมิร่างกาย (°C)', 'bodyTemperature')}
         </div>
 
         <div className="form-group">
@@ -117,7 +117,7 @@ export default function Analyze() {
 
         {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px' }}>{error}</p>}
 
-        <button className="btn btn-primary" onClick={submit} disabled={loading}
+        <button className="btn btn-primary" onClick={submit} disabled={loading || !userId}
           style={{ width: '100%', fontSize: '1.1rem', padding: '0.85rem' }}>
           {loading ? (
             <span>🤖 AI กำลังวิเคราะห์...</span>

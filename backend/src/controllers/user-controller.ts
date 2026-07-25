@@ -34,6 +34,14 @@ export class UserController {
     return c.json({ data: updated })
   }
 
+  async loginByEmail(c: Context<{ Bindings: Env }>) {
+    const body = await c.req.json<{ email: string }>()
+    if (!body.email) return c.json({ error: 'email is required' }, 400)
+    const user = await this.repo.findByEmail(body.email)
+    if (!user) return c.json({ error: 'ไม่พบบัญชีที่ใช้อีเมลนี้' }, 404)
+    return c.json({ data: user })
+  }
+
   async listUsers(c: Context<{ Bindings: Env }>) {
     const users = await this.repo.findAll()
     return c.json({ data: users })

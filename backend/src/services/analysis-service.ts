@@ -28,27 +28,37 @@ export class AnalysisService {
     else if (data.age >= 50) { score += 15; factors.push(`อายุ ${data.age} ปี`); recommendations.push('ควรตรวจสุขภาพประจำปี') }
     else if (data.age >= 40) { score += 8; factors.push(`อายุ ${data.age} ปี`) }
 
-    // 3. Blood Pressure
-    if (data.bloodPressureSystolic >= 180 || data.bloodPressureDiastolic >= 110) {
-      score += 35; factors.push(`ความดัน ${data.bloodPressureSystolic}/${data.bloodPressureDiastolic} (สูงระดับ 3)`); recommendations.push('ความดันโลหิตสูงรุนแรง — ไปพบแพทย์โดยด่วน')
-    } else if (data.bloodPressureSystolic >= 140 || data.bloodPressureDiastolic >= 90) {
-      score += 20; factors.push(`ความดัน ${data.bloodPressureSystolic}/${data.bloodPressureDiastolic} (สูง)`); recommendations.push('ความดันสูง ควรงดเค็มและพบแพทย์')
-    } else if (data.bloodPressureSystolic >= 130 || data.bloodPressureDiastolic >= 80) {
-      score += 10; factors.push(`ความดัน ${data.bloodPressureSystolic}/${data.bloodPressureDiastolic} (สูงขึ้น)`); recommendations.push('ความดันเริ่มสูง ควรเฝ้าระวัง')
+    // 3. Blood Pressure (optional)
+    const bpSys = data.bloodPressureSystolic
+    const bpDia = data.bloodPressureDiastolic
+    if (bpSys && bpDia) {
+      if (bpSys >= 180 || bpDia >= 110) {
+        score += 35; factors.push(`ความดัน ${bpSys}/${bpDia} (สูงระดับ 3)`); recommendations.push('ความดันโลหิตสูงรุนแรง — ไปพบแพทย์โดยด่วน')
+      } else if (bpSys >= 140 || bpDia >= 90) {
+        score += 20; factors.push(`ความดัน ${bpSys}/${bpDia} (สูง)`); recommendations.push('ความดันสูง ควรงดเค็มและพบแพทย์')
+      } else if (bpSys >= 130 || bpDia >= 80) {
+        score += 10; factors.push(`ความดัน ${bpSys}/${bpDia} (สูงขึ้น)`); recommendations.push('ความดันเริ่มสูง ควรเฝ้าระวัง')
+      }
     }
 
-    // 4. Heart Rate
-    if (data.heartRate > 120 || data.heartRate < 50) {
-      score += 20; factors.push(`อัตราการเต้นหัวใจ ${data.heartRate} bpm`); recommendations.push('อัตราการเต้นหัวใจผิดปกติ ควรพบแพทย์')
-    } else if (data.heartRate > 100 || data.heartRate < 60) {
-      score += 8; factors.push(`อัตราการเต้นหัวใจ ${data.heartRate} bpm`)
+    // 4. Heart Rate (optional)
+    const hr = data.heartRate
+    if (hr) {
+      if (hr > 120 || hr < 50) {
+        score += 20; factors.push(`อัตราการเต้นหัวใจ ${hr} bpm`); recommendations.push('อัตราการเต้นหัวใจผิดปกติ ควรพบแพทย์')
+      } else if (hr > 100 || hr < 60) {
+        score += 8; factors.push(`อัตราการเต้นหัวใจ ${hr} bpm`)
+      }
     }
 
-    // 5. Body Temperature
-    if (data.bodyTemperature >= 39) {
-      score += 25; factors.push(`ไข้ ${data.bodyTemperature}°C`); recommendations.push('ไข้สูง ควรไปพบแพทย์')
-    } else if (data.bodyTemperature >= 38) {
-      score += 12; factors.push(`ไข้ ${data.bodyTemperature}°C`); recommendations.push('มีไข้ พักผ่อนให้เพียงพอ')
+    // 5. Body Temperature (optional)
+    const temp = data.bodyTemperature
+    if (temp) {
+      if (temp >= 39) {
+        score += 25; factors.push(`ไข้ ${temp}°C`); recommendations.push('ไข้สูง ควรไปพบแพทย์')
+      } else if (temp >= 38) {
+        score += 12; factors.push(`ไข้ ${temp}°C`); recommendations.push('มีไข้ พักผ่อนให้เพียงพอ')
+      }
     }
 
     // 6. Symptoms analysis

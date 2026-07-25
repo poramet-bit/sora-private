@@ -7,7 +7,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(err.error || `HTTP ${res.status}`)
+    throw new Error(err.error || err.message || `HTTP ${res.status}`)
   }
   return res.status === 204 ? (undefined as T) : res.json()
 }
@@ -28,10 +28,10 @@ export interface AnalysisData {
   gender: string
   weight: number
   height: number
-  bloodPressureSystolic: number
-  bloodPressureDiastolic: number
-  heartRate: number
-  bodyTemperature: number
+  bloodPressureSystolic?: number
+  bloodPressureDiastolic?: number
+  heartRate?: number
+  bodyTemperature?: number
   symptoms: string
   medicalHistory?: string
 }
@@ -49,12 +49,15 @@ export interface AnalysisResult {
   }
   factors: string[]
   recommendations: string[]
+  aiSummary?: string
 }
 
 export const api = {
   getProfile: (userId: string) => request<{ data: UserProfile }>(`/profile/${userId}`),
   createProfile: (data: { name: string; email: string; age: number; gender: string }) =>
     request<{ data: UserProfile }>('/profile', { method: 'POST', body: JSON.stringify(data) }),
+  loginByEmail: (email: string) =>
+    request<{ data: UserProfile }>(`/login`, { method: 'POST', body: JSON.stringify({ email }) }),
   updateProfile: (userId: string, data: Partial<{ name: string; email: string; age: number; gender: string }>) =>
     request<{ data: UserProfile }>(`/profile/${userId}`, { method: 'PATCH', body: JSON.stringify(data) }),
   uploadImage: async (file: File) => {
@@ -66,8 +69,8 @@ export const api = {
   },
   analyze: (data: AnalysisData) =>
     request<{ data: AnalysisResult }>('/analyze', { method: 'POST', body: JSON.stringify(data) }),
-  getHistory: (userId?: string) =>
-    request<{ data: any[] }>(`/history${userId ? `?userId=${userId}` : ''}`),
+  getHistory: (userId: string) =>
+    request<{ data: any[] }>(`/history?userId=${userId}`),
   getAnalysis: (id: string) =>
     request<{ data: AnalysisResult }>(`/analysis/${id}`),
 }
