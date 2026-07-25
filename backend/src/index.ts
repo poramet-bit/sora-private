@@ -25,7 +25,21 @@ app.use('*', cors({
 app.options('*', (c) => c.body(null, 204))
 
 // Health check
-app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
+app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString(), ai: !!c.env.AI }))
+
+// AI test endpoint
+app.get('/ai-test', async (c) => {
+  try {
+    if (!c.env.AI) return c.json({ error: 'AI binding not available' }, 500)
+    const res = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [{ role: 'user', content: 'บอกว่าสวัสดีเป็นภาษาไทย' }],
+      max_tokens: 50,
+    }) as any
+    return c.json({ ok: true, response: res?.response || JSON.stringify(res).slice(0, 200) })
+  } catch (e: any) {
+    return c.json({ error: e.message, name: e.name }, 500)
+  }
+})
 
 // API routes
 app.route('/api', apiRoutes)
