@@ -27,20 +27,6 @@ app.options('*', (c) => c.body(null, 204))
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString(), ai: !!c.env.AI }))
 
-// AI test endpoint
-app.get('/ai-test', async (c) => {
-  try {
-    if (!c.env.AI) return c.json({ error: 'AI binding not available' }, 500)
-    const res = await c.env.AI.run('@cf/openai/gpt-oss-20b', {
-      messages: [{ role: 'user', content: 'สวัสดี แนะนำตัวเองสั้นๆ ภาษาไทย' }],
-      max_tokens: 500,
-    }) as any
-    return c.json({ ok: true, raw: res, choices: res?.choices?.[0]?.message ?? null })
-  } catch (e: any) {
-    return c.json({ error: e.message, name: e.name }, 500)
-  }
-})
-
 // API routes
 app.route('/api', apiRoutes)
 
