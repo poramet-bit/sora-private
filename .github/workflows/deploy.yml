@@ -20,9 +20,29 @@ jobs:
       - run: npm install --legacy-peer-deps
       - name: Typecheck
         run: npx tsc --noEmit
-      - name: Inject D1 Database ID
+      - name: Create wrangler.jsonc
         run: |
-          sed -i "s/<REPLACE_WITH_D1_DATABASE_ID>/${{ secrets.D1_DATABASE_ID }}/g" wrangler.jsonc
+          cat > wrangler.jsonc << 'EOF'
+          {
+            "$schema": "node_modules/wrangler/config-schema.json",
+            "name": "ngernngern-thongthong-backend",
+            "main": "src/index.ts",
+            "compatibility_date": "2026-07-01",
+            "observability": { "enabled": true },
+            "d1_databases": [
+              {
+                "binding": "DB",
+                "database_name": "ngernngern-thongthong-db",
+                "database_id": "${{ secrets.D1_DATABASE_ID }}",
+                "migrations_dir": "migrations"
+              }
+            ],
+            "vars": {
+              "ENVIRONMENT": "production",
+              "CORS_ORIGIN": "*"
+            }
+          }
+          EOF
       - name: Apply migrations
         run: npx wrangler d1 migrations apply ngernngern-thongthong-db --remote
         env:
