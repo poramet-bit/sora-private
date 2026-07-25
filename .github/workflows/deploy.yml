@@ -19,7 +19,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm install
+      - run: npm install --legacy-peer-deps
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Inject D1 Database ID
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm install --legacy-peer-deps
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Build
