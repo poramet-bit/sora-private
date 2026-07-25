@@ -31,7 +31,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 app.get('/ai-test', async (c) => {
   try {
     if (!c.env.AI) return c.json({ error: 'AI binding not available' }, 500)
-    const res = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+    const res = await c.env.AI.run('@cf/zai/glm-4.7-flash', {
       messages: [{ role: 'user', content: 'บอกว่าสวัสดีเป็นภาษาไทย' }],
       max_tokens: 50,
     }) as any

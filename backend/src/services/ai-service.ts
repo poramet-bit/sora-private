@@ -23,7 +23,7 @@ export class AIService {
     const prompt = this.buildPrompt(data, bmi)
 
     try {
-      const response = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
+      const response = await ai.run('@cf/zai/glm-4.7-flash', {
         messages: [
           {
             role: 'system',
