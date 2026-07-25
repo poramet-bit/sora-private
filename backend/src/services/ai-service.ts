@@ -27,15 +27,15 @@ export class AIService {
         messages: [
           {
             role: 'system',
-            content: 'คุณเป็นผู้ช่วยวิเคราะห์สุขภาพ AI จงตอบเป็นภาษาไทยเท่านั้น วิเคราะห์ข้อมูลสุขภาพและให้คำแนะนำเชิงลึก'
+            content: 'คุณเป็นผู้ช่วยวิเคราะห์สุขภาพ AI จงตอบเป็นภาษาไทย วิเคราะห์ข้อมูลสุขภาพและให้คำแนะนำ'
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 800,
+        max_tokens: 1200,
       }) as any
 
-      const text = response?.response || response?.result?.response || ''
-      if (!text) return null
+      const text: string = response?.response || response?.result?.response || ''
+      if (!text || text.length < 10) return null
 
       return this.parseAIResponse(text, bmi)
     } catch (err) {
@@ -45,27 +45,16 @@ export class AIService {
   }
 
   private buildPrompt(data: CreateHealthRecordDTO, bmi: number): string {
-    return `วิเคราะห์ความเสี่ยงสุขภาพจากข้อมูลต่อไปนี้:
+    return `วิเคราะห์ความเสี่ยงสุขภาพ:
+อายุ: ${data.age} ปี, เพศ: ${data.gender}
+น้ำหนัก: ${data.weight}kg, ส่วนสูง: ${data.height}cm, BMI: ${bmi.toFixed(1)}
+ความดัน: ${data.bloodPressureSystolic}/${data.bloodPressureDiastolic}
+อัตราหัวใจ: ${data.heartRate}bpm, อุณหภูมิ: ${data.bodyTemperature}C
+อาการ: ${data.symptoms}
+ประวัติแพทย์: ${data.medicalHistory || 'ไม่มี'}
 
-- อายุ: ${data.age} ปี
-- เพศ: ${data.gender}
-- น้ำหนัก: ${data.weight} กก.
-- ส่วนสูง: ${data.height} ซม.
-- BMI: ${bmi.toFixed(1)}
-- ความดันโลหิต: ${data.bloodPressureSystolic}/${data.bloodPressureDiastolic} mmHg
-- อัตราการเต้นหัวใจ: ${data.heartRate} bpm
-- อุณหภูมิร่างกาย: ${data.bodyTemperature} °C
-- อาการ: ${data.symptoms}
-- ประวัติการแพทย์: ${data.medicalHistory || 'ไม่มี'}
-
-จงตอบในรูปแบบ JSON เท่านั้น ดังนี้:
-{
-  "riskLevel": "low | moderate | high | critical",
-  "riskScore": 0-100,
-  "summary": "สรุปผลการวิเคราะห์เป็นภาษาไทย 2-3 ประโยค",
-  "factors": ["ปัจจัยเสี่ยง 1", "ปัจจัยเสี่ยง 2"],
-  "recommendations": ["คำแนะนำ 1", "คำแนะนำ 2", "คำแนะนำ 3"]
-}`
+ตอบเป็น JSON:
+{"riskLevel":"low|moderate|high|critical","riskScore":0-100,"summary":"สรุปภาษาไทย","factors":["ปัจจัย1"],"recommendations":["คำแนะนำ1"]}`
   }
 
   private parseAIResponse(text: string, bmi: number): {
@@ -75,15 +64,21 @@ export class AIService {
     factors: string[]
     aiSummary: string
   } {
-    // Extract JSON from AI response (it may have markdown code fences)
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    // Extract JSON from AI response
+    const jsonMatch = text.match(/\{[\s\S]*?\}/)
     let parsed: any = null
 
     if (jsonMatch) {
       try {
         parsed = JSON.parse(jsonMatch[0])
       } catch {
-        // If JSON parse fails, use text as summary
+        // Try to fix common JSON issues
+        try {
+          const fixed = jsonMatch[0].replace(/,\s*}/g, '}').replace(/,\s*\]/g, ']')
+          parsed = JSON.parse(fixed)
+        } catch {
+          // give up, use text as summary
+        }
       }
     }
 
@@ -92,23 +87,25 @@ export class AIService {
       const riskLevel = validLevels.includes(parsed.riskLevel) ? parsed.riskLevel : 'moderate'
       const riskScore = Math.min(100, Math.max(0, Number(parsed.riskScore) || 50))
       const recommendations = Array.isArray(parsed.recommendations)
-        ? parsed.recommendations.filter((r: any) => typeof r === 'string').slice(0, 6)
+        ? parsed.recommendations.filter((r: any) => typeof r === 'string' && r.length > 0).slice(0, 6)
         : ['ควรตรวจสุขภาพประจำปี']
       const factors = Array.isArray(parsed.factors)
-        ? parsed.factors.filter((f: any) => typeof f === 'string').slice(0, 6)
+        ? parsed.factors.filter((f: any) => typeof f === 'string' && f.length > 0).slice(0, 6)
         : [`BMI ${bmi.toFixed(1)}`]
-      const aiSummary = typeof parsed.summary === 'string' ? parsed.summary : text.slice(0, 200)
+      const aiSummary = typeof parsed.summary === 'string' && parsed.summary.length > 0
+        ? parsed.summary
+        : text.slice(0, 300)
 
       return { riskLevel, riskScore, recommendations, factors, aiSummary }
     }
 
-    // Fallback: use text as summary
+    // Fallback: use raw text as summary
     return {
       riskLevel: 'moderate',
       riskScore: 50,
       recommendations: ['ควรตรวจสุขภาพประจำปี'],
       factors: [`BMI ${bmi.toFixed(1)}`],
-      aiSummary: text.slice(0, 300),
+      aiSummary: text.slice(0, 400),
     }
   }
 }

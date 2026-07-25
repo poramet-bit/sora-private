@@ -19,7 +19,6 @@ export class HealthController {
     const file = body['image'] as File | undefined
     if (!file) return c.json({ error: 'No image provided' }, 400)
 
-    // Store as base64 data URL (in production, use R2 or Cloudflare Images)
     const arrayBuffer = await file.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     const dataUrl = `data:${file.type};base64,${base64}`
@@ -28,75 +27,73 @@ export class HealthController {
   }
 
   async analyze(c: Context<{ Bindings: Env }>) {
-    const body = await c.req.json<CreateHealthRecordDTO>()
+    try {
+      const body = await c.req.json<CreateHealthRecordDTO>()
 
-    // Validate required fields
-    if (!body.userId || !body.symptoms) return c.json({ error: 'userId and symptoms are required' }, 400)
-
-    // Save health record
-    const record = await this.repo.createRecord(body)
-
-    // Calculate BMI
-    const heightM = body.height / 100
-    const bmi = body.weight / (heightM * heightM)
-
-    // Try AI analysis first, fall back to rule-based
-    let result: {
-      riskLevel: any
-      riskScore: number
-      bmi: number
-      recommendations: string[]
-      factors: string[]
-      aiSummary?: string
-    }
-
-    const aiResult = await this.aiService.analyzeWithAI(c.env.AI, body, Math.round(bmi * 10) / 10)
-
-    if (aiResult) {
-      result = {
-        riskLevel: aiResult.riskLevel,
-        riskScore: aiResult.riskScore,
-        bmi: Math.round(bmi * 10) / 10,
-        recommendations: aiResult.recommendations,
-        factors: aiResult.factors,
-        aiSummary: aiResult.aiSummary,
+      if (!body.userId || !body.symptoms) {
+        return c.json({ error: 'userId and symptoms are required' }, 400)
       }
-    } else {
-      // Fallback to rule-based
-      const ruleResult = this.ruleBased.analyze(body)
-      result = {
-        riskLevel: ruleResult.riskLevel,
-        riskScore: ruleResult.riskScore,
-        bmi: ruleResult.bmi,
-        recommendations: ruleResult.recommendations,
-        factors: ruleResult.factors,
+
+      // Save health record
+      const record = await this.repo.createRecord(body)
+
+      // Calculate BMI
+      const heightM = body.height / 100
+      const bmi = body.weight / (heightM * heightM)
+      const bmiRounded = Math.round(bmi * 10) / 10
+
+      // Try AI analysis first, fall back to rule-based
+      let riskLevel: string
+      let riskScore: number
+      let recommendations: string[]
+      let factors: string[]
+      let aiSummary: string | undefined
+
+      const aiResult = await this.aiService.analyzeWithAI(c.env.AI, body, bmiRounded)
+
+      if (aiResult) {
+        riskLevel = aiResult.riskLevel
+        riskScore = aiResult.riskScore
+        recommendations = aiResult.recommendations
+        factors = aiResult.factors
+        aiSummary = aiResult.aiSummary
+      } else {
+        // Fallback to rule-based
+        const ruleResult = this.ruleBased.analyze(body)
+        riskLevel = ruleResult.riskLevel
+        riskScore = ruleResult.riskScore
+        recommendations = ruleResult.recommendations
+        factors = ruleResult.factors
       }
+
+      // Save analysis result
+      const analysisResult = await this.repo.createAnalysis({
+        id: crypto.randomUUID(),
+        healthRecordId: record.id,
+        userId: body.userId,
+        riskLevel: riskLevel as any,
+        riskScore,
+        bmi: bmiRounded,
+        recommendations: recommendations.join('\n'),
+        factors: factors.join('\n'),
+      })
+
+      const response: any = {
+        record,
+        analysis: analysisResult,
+        factors,
+        recommendations,
+      }
+
+      if (aiSummary) {
+        response.aiSummary = aiSummary
+      }
+
+      return c.json({ data: response }, 201)
+    } catch (err: any) {
+      console.error('Analyze error:', err)
+      return c.json({ error: 'Analysis failed', message: err.message }, 500)
     }
-
-    // Save analysis result
-    const analysisResult = await this.repo.createAnalysis({
-      id: crypto.randomUUID(),
-      healthRecordId: record.id,
-      userId: body.userId,
-      riskLevel: result.riskLevel,
-      riskScore: result.riskScore,
-      bmi: result.bmi,
-      recommendations: result.recommendations.join('\n'),
-      factors: result.factors.join('\n'),
-    })
-
-    const response: any = {
-      record,
-      analysis: analysisResult,
-      factors: result.factors,
-      recommendations: result.recommendations,
-    }
-
-    if (result.aiSummary) {
-      response.aiSummary = result.aiSummary
-    }
-
-    return c.json({ data: response }, 201)
   }
 
   async getHistory(c: Context<{ Bindings: Env }>) {
