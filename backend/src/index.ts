@@ -13,11 +13,15 @@ const app = new Hono<{ Bindings: Env }>()
 
 // Middleware
 app.use('*', logger())
-app.use('*', async (c, next) => {
-  const origin = c.env.CORS_ORIGIN || '*'
-  const corsMiddleware = cors({ origin, allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'], allowHeaders: ['Content-Type', 'Authorization'] })
-  await corsMiddleware(c, next)
-})
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+}))
+
+// Handle CORS preflight explicitly
+app.options('*', (c) => c.body(null, 204))
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
