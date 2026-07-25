@@ -40,6 +40,9 @@ jobs:
             "vars": {
               "ENVIRONMENT": "production",
               "CORS_ORIGIN": "*"
+            },
+            "ai": {
+              "binding": "AI"
             }
           }
           EOF

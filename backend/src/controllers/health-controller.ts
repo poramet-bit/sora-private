@@ -2,11 +2,13 @@ import type { Context } from 'hono'
 import type { Env } from '../index'
 import { HealthRepository } from '../repositories/health-repository'
 import { AnalysisService } from '../services/analysis-service'
+import { AIService } from '../services/ai-service'
 import type { CreateHealthRecordDTO } from '../models/types'
 
 export class HealthController {
   private repo: HealthRepository
-  private analysis = new AnalysisService()
+  private ruleBased = new AnalysisService()
+  private aiService = new AIService()
 
   constructor(c: Context<{ Bindings: Env }>) {
     this.repo = new HealthRepository(c.env.DB)
@@ -34,8 +36,42 @@ export class HealthController {
     // Save health record
     const record = await this.repo.createRecord(body)
 
-    // Run analysis
-    const result = this.analysis.analyze(body)
+    // Calculate BMI
+    const heightM = body.height / 100
+    const bmi = body.weight / (heightM * heightM)
+
+    // Try AI analysis first, fall back to rule-based
+    let result: {
+      riskLevel: any
+      riskScore: number
+      bmi: number
+      recommendations: string[]
+      factors: string[]
+      aiSummary?: string
+    }
+
+    const aiResult = await this.aiService.analyzeWithAI(c.env.AI, body, Math.round(bmi * 10) / 10)
+
+    if (aiResult) {
+      result = {
+        riskLevel: aiResult.riskLevel,
+        riskScore: aiResult.riskScore,
+        bmi: Math.round(bmi * 10) / 10,
+        recommendations: aiResult.recommendations,
+        factors: aiResult.factors,
+        aiSummary: aiResult.aiSummary,
+      }
+    } else {
+      // Fallback to rule-based
+      const ruleResult = this.ruleBased.analyze(body)
+      result = {
+        riskLevel: ruleResult.riskLevel,
+        riskScore: ruleResult.riskScore,
+        bmi: ruleResult.bmi,
+        recommendations: ruleResult.recommendations,
+        factors: ruleResult.factors,
+      }
+    }
 
     // Save analysis result
     const analysisResult = await this.repo.createAnalysis({
@@ -49,7 +85,18 @@ export class HealthController {
       factors: result.factors.join('\n'),
     })
 
-    return c.json({ data: { record, analysis: analysisResult, factors: result.factors, recommendations: result.recommendations } }, 201)
+    const response: any = {
+      record,
+      analysis: analysisResult,
+      factors: result.factors,
+      recommendations: result.recommendations,
+    }
+
+    if (result.aiSummary) {
+      response.aiSummary = result.aiSummary
+    }
+
+    return c.json({ data: response }, 201)
   }
 
   async getHistory(c: Context<{ Bindings: Env }>) {

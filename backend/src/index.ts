@@ -5,6 +5,7 @@ import { apiRoutes } from './routes'
 
 export interface Env {
   DB: D1Database
+  AI: Ai
   ENVIRONMENT: string
   CORS_ORIGIN: string
 }
