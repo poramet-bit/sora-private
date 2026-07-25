@@ -11,7 +11,7 @@ export class UserController {
   }
 
   async getProfile(c: Context<{ Bindings: Env }>) {
-    const userId = c.req.param('userId')
+    const userId = c.req.param("userId")!
     const user = await this.repo.findById(userId)
     if (!user) return c.json({ error: 'User not found' }, 404)
     return c.json({ data: user })
@@ -27,7 +27,7 @@ export class UserController {
   }
 
   async updateProfile(c: Context<{ Bindings: Env }>) {
-    const userId = c.req.param('userId')
+    const userId = c.req.param("userId")!
     const body = await c.req.json<Partial<CreateUserDTO>>()
     const updated = await this.repo.update(userId, body)
     if (!updated) return c.json({ error: 'User not found' }, 404)

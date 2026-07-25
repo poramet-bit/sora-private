@@ -53,7 +53,7 @@ export class HealthController {
   }
 
   async getHistory(c: Context<{ Bindings: Env }>) {
-    const userId = c.req.query('userId')
+    const userId = c.req.query("userId") || ""
     if (userId) {
       const history = await this.repo.findHistoryByUser(userId)
       return c.json({ data: history })
@@ -63,7 +63,7 @@ export class HealthController {
   }
 
   async getAnalysis(c: Context<{ Bindings: Env }>) {
-    const id = c.req.param('id')
+    const id = c.req.param('id')!
     const result = await this.repo.findAnalysisById(id)
     if (!result) return c.json({ error: 'Analysis not found' }, 404)
     const record = await this.repo.findRecordById(result.healthRecordId)
