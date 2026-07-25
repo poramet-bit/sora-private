@@ -15,14 +15,14 @@ export default function App() {
     <>
       <nav className="navbar">
         <div className="container">
-          <Link to="/" className="logo">🏥 ngernngern_thongthong</Link>
+          <Link to="/" className="logo">🏥 AI ประเมินความเสี่ยงสุขภาพ</Link>
           <nav>
-            <NavLink to="/" style={linkStyle} end>Home</NavLink>
-            <NavLink to="/upload" style={linkStyle}>Upload</NavLink>
-            <NavLink to="/analyze" style={linkStyle}>Analyze</NavLink>
-            <NavLink to="/history" style={linkStyle}>History</NavLink>
-            <NavLink to="/profile" style={linkStyle}>Profile</NavLink>
-            <NavLink to="/about" style={linkStyle}>About</NavLink>
+            <NavLink to="/" style={linkStyle} end>หน้าแรก</NavLink>
+            <NavLink to="/upload" style={linkStyle}>อัปโหลดรูป</NavLink>
+            <NavLink to="/analyze" style={linkStyle}>ประเมิน</NavLink>
+            <NavLink to="/history" style={linkStyle}>ประวัติ</NavLink>
+            <NavLink to="/profile" style={linkStyle}>โปรไฟล์</NavLink>
+            <NavLink to="/about" style={linkStyle}>เกี่ยวกับ</NavLink>
           </nav>
         </div>
       </nav>

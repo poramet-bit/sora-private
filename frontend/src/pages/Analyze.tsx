@@ -26,8 +26,14 @@ export default function Analyze() {
   const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }))
 
   const submit = async () => {
-    if (!form.userId.trim()) { setError('กรุณากรอก User ID (สร้าง Profile ก่อน)'); return }
-    if (!form.symptoms.trim()) { setError('กรุณาอธิบายอาการ'); return }
+    if (!form.userId.trim()) {
+      setError('⚠️ กรุณาสร้างโปรไฟล์ก่อน (ไปที่หน้าโปรไฟล์เพื่อสร้าง)')
+      return
+    }
+    if (!form.symptoms.trim()) {
+      setError('⚠️ กรุณาอธิบายอาการอย่างน้อย 1 อาการ')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -35,16 +41,16 @@ export default function Analyze() {
       const res = await api.analyze(data)
       navigate(`/result/${res.data.analysis.id}`)
     } catch (e: any) {
-      setError(e.message)
+      setError('❌ เกิดข้อผิดพลาด: ' + e.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const input = (label: string, key: keyof typeof form, type = 'number') => (
+  const numInput = (label: string, key: keyof typeof form) => (
     <div className="form-group">
       <label>{label}</label>
-      <input type={type} value={form[key]} onChange={(e) => set(key, type === 'number' ? Number(e.target.value) : e.target.value)} />
+      <input type="number" value={form[key] as number} onChange={(e) => set(key, Number(e.target.value))} />
     </div>
   )
 
@@ -52,19 +58,29 @@ export default function Analyze() {
     <div>
       <div className="page-header">
         <h1>📝 กรอกข้อมูลสุขภาพ</h1>
-        <p>กรอกข้อมูลเพื่อให้ระบบประเมินความเสี่ยง</p>
+        <p>กรอกข้อมูลเพื่อให้ AI ประเมินความเสี่ยง (ขั้นตอนที่ 2 จาก 3)</p>
+      </div>
+
+      {/* AI Badge */}
+      <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span style={{ fontSize: '1.5rem' }}>🤖</span>
+        <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — คำนวณจาก BMI, ความดัน, อัตราหัวใจ, ไข้, และอาการ</span>
       </div>
 
       <div className="card">
-        {imageUrl && <img src={imageUrl} alt="Upload" style={{ maxWidth: '150px', borderRadius: '8px', marginBottom: '1rem' }} />}
+        {imageUrl && (
+          <div style={{ marginBottom: '1rem' }}>
+            <img src={imageUrl} alt="รูปที่อัปโหลด" style={{ maxWidth: '120px', borderRadius: '8px' }} />
+          </div>
+        )}
 
         <div className="form-group">
-          <label>User ID</label>
-          <input value={form.userId} onChange={(e) => set('userId', e.target.value)} placeholder="กรอก ID ของคุณ (สร้างจากหน้า Profile)" />
+          <label>รหัสผู้ใช้ (User ID) *</label>
+          <input value={form.userId} onChange={(e) => set('userId', e.target.value)} placeholder="สร้างจากหน้าโปรไฟล์" />
         </div>
 
         <div className="form-row-3">
-          {input('อายุ', 'age')}
+          {numInput('อายุ (ปี)', 'age')}
           <div className="form-group">
             <label>เพศ</label>
             <select value={form.gender} onChange={(e) => set('gender', e.target.value)}>
@@ -73,34 +89,41 @@ export default function Analyze() {
               <option value="other">อื่นๆ</option>
             </select>
           </div>
-          {input('น้ำหนัก (kg)', 'weight')}
+          {numInput('น้ำหนัก (กก.)', 'weight')}
         </div>
 
         <div className="form-row">
-          {input('ส่วนสูง (cm)', 'height')}
-          {input('อัตราการเต้นหัวใจ (bpm)', 'heartRate')}
+          {numInput('ส่วนสูง (ซม.)', 'height')}
+          {numInput('อัตราการเต้นหัวใจ (ครั้ง/นาที)', 'heartRate')}
         </div>
 
         <div className="form-row-3">
-          {input('ความดันบน (Systolic)', 'bloodPressureSystolic')}
-          {input('ความดันล่าง (Diastolic)', 'bloodPressureDiastolic')}
-          {input('อุณหภูมิร่างกาย (°C)', 'bodyTemperature')}
+          {numInput('ความดันบน (Systolic)', 'bloodPressureSystolic')}
+          {numInput('ความดันล่าง (Diastolic)', 'bloodPressureDiastolic')}
+          {numInput('อุณหภูมิร่างกาย (°C)', 'bodyTemperature')}
         </div>
 
         <div className="form-group">
-          <label>อาการปัจจุบัน *</label>
-          <textarea value={form.symptoms} onChange={(e) => set('symptoms', e.target.value)} rows={3} placeholder="อธิบายอาการ เช่น เหนื่อยง่าย ปวดหัว..." />
+          <label>อาการปัจจุบัน * <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(อธิบายอาการที่พบ)</span></label>
+          <textarea value={form.symptoms} onChange={(e) => set('symptoms', e.target.value)} rows={3}
+            placeholder="เช่น เหนื่อยง่าย, ปวดหัว, เวียนหัว, เจ็บหน้าอก, หายใจไม่ออก..." />
         </div>
 
         <div className="form-group">
-          <label>ประวัติการแพทย์ (ถ้ามี)</label>
-          <textarea value={form.medicalHistory} onChange={(e) => set('medicalHistory', e.target.value)} rows={2} placeholder="โรคประจำตัว ยาที่ทาน..." />
+          <label>ประวัติการแพทย์ <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ถ้ามี)</span></label>
+          <textarea value={form.medicalHistory} onChange={(e) => set('medicalHistory', e.target.value)} rows={2}
+            placeholder="โรคประจำตัว, ยาที่ทานอยู่..." />
         </div>
 
-        {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem' }}>{error}</p>}
+        {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px' }}>{error}</p>}
 
-        <button className="btn btn-primary" onClick={submit} disabled={loading} style={{ width: '100%' }}>
-          {loading ? 'กำลังวิเคราะห์...' : '🔍 ประเมินความเสี่ยง'}
+        <button className="btn btn-primary" onClick={submit} disabled={loading}
+          style={{ width: '100%', fontSize: '1.1rem', padding: '0.85rem' }}>
+          {loading ? (
+            <span>🤖 AI กำลังวิเคราะห์...</span>
+          ) : (
+            <span>🔍 ให้ AI ประเมินความเสี่ยง</span>
+          )}
         </button>
       </div>
     </div>

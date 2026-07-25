@@ -31,7 +31,7 @@ export default function Upload() {
     <div>
       <div className="page-header">
         <h1>📷 อัปโหลดรูปภาพ</h1>
-        <p>เลือกรูปภาพเพื่อประกอบการประเมิน</p>
+        <p>เลือกรูปภาพเพื่อประกอบการประเมิน (ขั้นตอนที่ 1 จาก 3)</p>
       </div>
 
       <div className="card">
@@ -46,7 +46,7 @@ export default function Upload() {
 
         {preview ? (
           <div style={{ textAlign: 'center' }}>
-            <img src={preview} alt="Preview" style={{ maxWidth: '300px', borderRadius: '12px', marginBottom: '1rem' }} />
+            <img src={preview} alt="ตัวอย่างรูป" style={{ maxWidth: '300px', borderRadius: '12px', marginBottom: '1rem' }} />
             <div>
               <button className="btn btn-outline" onClick={() => fileRef.current?.click()} style={{ marginRight: '0.5rem' }}>
                 เลือกรูปใหม่
@@ -62,16 +62,16 @@ export default function Upload() {
             style={{ textAlign: 'center', padding: '3rem', border: '2px dashed var(--border)', borderRadius: '12px', cursor: 'pointer' }}
           >
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📤</div>
-            <p style={{ fontWeight: 600 }}>คลิกเพื่อเลือกรูปภาพ</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>หรือถ่ายรูปจากกล้อง</p>
+            <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>คลิกเพื่อเลือกรูปภาพ</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>หรือถ่ายรูปจากกล้องได้</p>
           </div>
         )}
 
         {uploading && <p style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--primary)' }}>กำลังอัปโหลด...</p>}
-        {error && <p style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--danger)' }}>{error}</p>}
+        {error && <p style={{ textAlign: 'center', marginTop: '1rem', color: 'var(--danger)' }}>❌ {error}</p>}
 
         <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-          <Link to="/" className="btn btn-outline">← กลับ</Link>
+          <Link to="/" className="btn btn-outline">← กลับหน้าแรก</Link>
           <button className="btn btn-outline" onClick={() => navigate('/analyze')}>ข้ามขั้นตอนนี้ →</button>
         </div>
       </div>
