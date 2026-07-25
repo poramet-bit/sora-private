@@ -54,10 +54,10 @@ export interface AnalysisResult {
 
 export const api = {
   getProfile: (userId: string) => request<{ data: UserProfile }>(`/profile/${userId}`),
-  createProfile: (data: { name: string; email: string; age: number; gender: string }) =>
+  createProfile: (data: { name: string; email: string; password: string; age: number; gender: string }) =>
     request<{ data: UserProfile }>('/profile', { method: 'POST', body: JSON.stringify(data) }),
-  loginByEmail: (email: string) =>
-    request<{ data: UserProfile }>(`/login`, { method: 'POST', body: JSON.stringify({ email }) }),
+  loginByEmail: (email: string, password: string) =>
+    request<{ data: UserProfile }>(`/login`, { method: 'POST', body: JSON.stringify({ email, password }) }),
   updateProfile: (userId: string, data: Partial<{ name: string; email: string; age: number; gender: string }>) =>
     request<{ data: UserProfile }>(`/profile/${userId}`, { method: 'PATCH', body: JSON.stringify(data) }),
   uploadImage: async (file: File) => {

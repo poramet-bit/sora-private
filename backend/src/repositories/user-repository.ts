@@ -4,24 +4,24 @@ export class UserRepository {
   constructor(private db: D1Database) {}
 
   async findAll(): Promise<User[]> {
-    const { results } = await this.db.prepare('SELECT * FROM users ORDER BY created_at DESC').all()
+    const { results } = await this.db.prepare('SELECT id, name, email, age, gender, created_at FROM users ORDER BY created_at DESC').all()
     return results as unknown as User[]
   }
 
   async findById(id: string): Promise<User | null> {
-    return await this.db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first() as unknown as User | null
+    return await this.db.prepare('SELECT id, name, email, age, gender, created_at FROM users WHERE id = ?').bind(id).first() as unknown as User | null
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return await this.db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first() as unknown as User | null
   }
 
-  async create(data: CreateUserDTO): Promise<User> {
+  async create(data: CreateUserDTO, passwordHash: string): Promise<User> {
     const id = crypto.randomUUID()
     const createdAt = new Date().toISOString()
-    await this.db.prepare('INSERT INTO users (id, name, email, age, gender, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(id, data.name, data.email, data.age, data.gender, createdAt).run()
-    return { id, ...data, createdAt }
+    await this.db.prepare('INSERT INTO users (id, name, email, password, age, gender, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, data.name, data.email, passwordHash, data.age, data.gender, createdAt).run()
+    return { id, name: data.name, email: data.email, age: data.age, gender: data.gender, createdAt }
   }
 
   async update(id: string, data: Partial<CreateUserDTO>): Promise<User | null> {

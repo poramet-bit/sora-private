@@ -3,44 +3,56 @@ import { api, type UserProfile } from '../services/api'
 
 export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', age: 30, gender: 'male' })
-  const [loginEmail, setLoginEmail] = useState('')
-  const [showLogin, setShowLogin] = useState(false)
+  const [mode, setMode] = useState<'register' | 'login'>('register')
+  const [form, setForm] = useState({ name: '', email: '', password: '', age: 30, gender: 'male' })
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // Check if already logged in on mount
+  // Auto-login if userId in localStorage
   useState(() => {
     const savedId = localStorage.getItem('userId')
     if (savedId) {
-      api.getProfile(savedId).then(res => setProfile(res.data)).catch(() => {})
+      api.getProfile(savedId).then(res => setProfile(res.data)).catch(() => {
+        localStorage.removeItem('userId')
+      })
     }
   })
 
-  const create = async () => {
-    if (!form.name.trim() || !form.email.trim()) {
-      setError('⚠️ กรุณากรอกชื่อและอีเมล')
+  const register = async () => {
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      setError('⚠️ กรุณากรอกชื่อ อีเมล และรหัสผ่าน')
+      return
+    }
+    if (form.password.length < 6) {
+      setError('⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
       return
     }
     setLoading(true); setError(null); setSuccess(null)
     try {
-      const res = await api.createProfile(form)
+      const res = await api.createProfile({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        age: form.age,
+        gender: form.gender,
+      })
       setProfile(res.data)
       localStorage.setItem('userId', res.data.id)
-      setSuccess('✅ สร้างโปรไฟล์สำเร็จ!')
+      setSuccess('✅ สมัครสมาชิกสำเร็จ!')
     } catch (e: any) { setError('❌ ' + e.message) }
     finally { setLoading(false) }
   }
 
-  const loginByEmail = async () => {
-    if (!loginEmail.trim()) {
-      setError('⚠️ กรุณากรอกอีเมล')
+  const login = async () => {
+    if (!loginForm.email.trim() || !loginForm.password.trim()) {
+      setError('⚠️ กรุณากรอกอีเมลและรหัสผ่าน')
       return
     }
-    setLoading(true); setError(null)
+    setLoading(true); setError(null); setSuccess(null)
     try {
-      const res = await api.loginByEmail(loginEmail)
+      const res = await api.loginByEmail(loginForm.email, loginForm.password)
       setProfile(res.data)
       localStorage.setItem('userId', res.data.id)
       setSuccess('✅ เข้าสู่ระบบสำเร็จ!')
@@ -51,8 +63,10 @@ export default function Profile() {
   const logout = () => {
     localStorage.removeItem('userId')
     setProfile(null)
-    setForm({ name: '', email: '', age: 30, gender: 'male' })
+    setForm({ name: '', email: '', password: '', age: 30, gender: 'male' })
+    setLoginForm({ email: '', password: '' })
     setSuccess(null)
+    setError(null)
   }
 
   if (profile) {
@@ -75,26 +89,12 @@ export default function Profile() {
   return (
     <div>
       <div className="page-header">
-        <h1>👤 {showLogin ? 'เข้าสู่ระบบ' : 'สร้างโปรไฟล์'}</h1>
-        <p>{showLogin ? 'กรอกอีเมลเพื่อเข้าสู่ระบบ' : 'สร้างโปรไฟล์ก่อนเริ่มประเมินความเสี่ยง'}</p>
+        <h1>👤 {mode === 'register' ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}</h1>
+        <p>{mode === 'register' ? 'สร้างบัญชีเพื่อเริ่มประเมินความเสี่ยง' : 'เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน'}</p>
       </div>
+
       <div className="card">
-        {showLogin ? (
-          <>
-            <div className="form-group">
-              <label>อีเมล *</label>
-              <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="เช่น somchai@email.com" />
-            </div>
-            {error && <p style={{ color: 'var(--danger)', marginBottom: '0.75rem' }}>{error}</p>}
-            {success && <p style={{ color: 'var(--success)', marginBottom: '0.75rem' }}>{success}</p>}
-            <button className="btn btn-primary" onClick={loginByEmail} disabled={loading} style={{ width: '100%' }}>
-              {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
-            </button>
-            <button className="btn btn-outline" onClick={() => { setShowLogin(false); setError(null) }} style={{ width: '100%', marginTop: '0.5rem' }}>
-              ยังไม่มีบัญชี? สมัครใหม่
-            </button>
-          </>
-        ) : (
+        {mode === 'register' ? (
           <>
             <div className="form-group">
               <label>ชื่อ-นามสกุล *</label>
@@ -103,6 +103,10 @@ export default function Profile() {
             <div className="form-group">
               <label>อีเมล *</label>
               <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="เช่น somchai@email.com" />
+            </div>
+            <div className="form-group">
+              <label>รหัสผ่าน * <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(อย่างน้อย 6 ตัวอักษร)</span></label>
+              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
             </div>
             <div className="form-row">
               <div className="form-group">
@@ -120,11 +124,30 @@ export default function Profile() {
             </div>
             {error && <p style={{ color: 'var(--danger)', marginBottom: '0.75rem' }}>{error}</p>}
             {success && <p style={{ color: 'var(--success)', marginBottom: '0.75rem' }}>{success}</p>}
-            <button className="btn btn-primary" onClick={create} disabled={loading} style={{ width: '100%' }}>
-              {loading ? 'กำลังสร้าง...' : '✅ สร้างโปรไฟล์'}
+            <button className="btn btn-primary" onClick={register} disabled={loading} style={{ width: '100%' }}>
+              {loading ? 'กำลังสมัคร...' : '✅ สมัครสมาชิก'}
             </button>
-            <button className="btn btn-outline" onClick={() => { setShowLogin(true); setError(null) }} style={{ width: '100%', marginTop: '0.5rem' }}>
+            <button className="btn btn-outline" onClick={() => { setMode('login'); setError(null); setSuccess(null) }} style={{ width: '100%', marginTop: '0.5rem' }}>
               มีบัญชีแล้ว? เข้าสู่ระบบ
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="form-group">
+              <label>อีเมล *</label>
+              <input type="email" value={loginForm.email} onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })} placeholder="เช่น somchai@email.com" />
+            </div>
+            <div className="form-group">
+              <label>รหัสผ่าน *</label>
+              <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} placeholder="••••••••" />
+            </div>
+            {error && <p style={{ color: 'var(--danger)', marginBottom: '0.75rem' }}>{error}</p>}
+            {success && <p style={{ color: 'var(--success)', marginBottom: '0.75rem' }}>{success}</p>}
+            <button className="btn btn-primary" onClick={login} disabled={loading} style={{ width: '100%' }}>
+              {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+            </button>
+            <button className="btn btn-outline" onClick={() => { setMode('register'); setError(null); setSuccess(null) }} style={{ width: '100%', marginTop: '0.5rem' }}>
+              ยังไม่มีบัญชี? สมัครสมาชิก
             </button>
           </>
         )}

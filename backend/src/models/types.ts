@@ -5,6 +5,7 @@ export interface User {
   id: string
   name: string
   email: string
+  password?: string
   age: number
   gender: Gender
   createdAt: string
@@ -53,8 +54,14 @@ export interface HistoryItem {
 export interface CreateUserDTO {
   name: string
   email: string
+  password: string
   age: number
   gender: Gender
+}
+
+export interface LoginDTO {
+  email: string
+  password: string
 }
 
 export interface CreateHealthRecordDTO {
