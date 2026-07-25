@@ -23,7 +23,7 @@ export class AIService {
     const prompt = this.buildPrompt(data, bmi)
 
     try {
-      const response = await ai.run('@cf/zai/glm-4.7-flash', {
+      const response = await ai.run('@cf/openai/gpt-oss-20b', {
         messages: [
           {
             role: 'system',
