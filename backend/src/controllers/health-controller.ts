@@ -106,19 +106,46 @@ export class HealthController {
 
   async getAnalysis(c: Context<{ Bindings: Env }>) {
     const id = c.req.param('id')!
-    const analysis = await this.repo.findAnalysisById(id)
-    if (!analysis) return c.json({ error: 'Analysis not found' }, 404)
+    const raw = await this.repo.findAnalysisById(id)
+    if (!raw) return c.json({ error: 'Analysis not found' }, 404)
+
+    // D1 returns snake_case — map to camelCase for frontend
+    const analysis: any = {
+      id: raw.id,
+      healthRecordId: raw.healthRecordId,
+      userId: raw.userId,
+      riskLevel: raw.riskLevel,
+      riskScore: raw.riskScore,
+      bmi: raw.bmi,
+      recommendations: raw.recommendations,
+      factors: raw.factors,
+      createdAt: raw.createdAt,
+    }
 
     let record: any = null
     try {
-      record = await this.repo.findRecordById(analysis.healthRecordId)
+      const rec = await this.repo.findRecordById(raw.healthRecordId)
+      if (rec) {
+        record = {
+          id: rec.id,
+          userId: rec.userId,
+          age: rec.age,
+          gender: rec.gender,
+          weight: rec.weight,
+          height: rec.height,
+          symptoms: rec.symptoms,
+          medicalHistory: rec.medicalHistory,
+          imageUrl: rec.imageUrl,
+          createdAt: rec.createdAt,
+        }
+      }
     } catch (e) {
-      // record lookup may fail, but we still have analysis data
+      // record lookup may fail
     }
 
     // Parse factors and recommendations back to arrays
-    const factors = analysis.factors ? analysis.factors.split('\n').filter(Boolean) : []
-    const recommendations = analysis.recommendations ? analysis.recommendations.split('\n').filter(Boolean) : []
+    const factors = raw.factors ? raw.factors.split('\n').filter(Boolean) : []
+    const recommendations = raw.recommendations ? raw.recommendations.split('\n').filter(Boolean) : []
 
     return c.json({
       data: {
