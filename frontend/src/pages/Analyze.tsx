@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { useLocation, useNavigate, Link } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { api, type AnalysisData } from '../services/api'
 
-// Generate a guest ID for anonymous users
 function getGuestId(): string {
   let id = localStorage.getItem('guestId')
   if (!id) {
@@ -32,13 +31,12 @@ export default function Analyze() {
 
   const submit = async () => {
     if (!form.symptoms.trim()) {
-      setError('⚠️ กรุณาอธิบายอาการอย่างน้อย 1 อาการ')
+      setError('กรุณาอธิบายอาการอย่างน้อย 1 อาการ')
       return
     }
     setLoading(true)
     setError(null)
     try {
-      // Use real userId if logged in, otherwise use guest ID
       const userId = localStorage.getItem('userId') || getGuestId()
       const data: AnalysisData = {
         ...form,
@@ -46,9 +44,9 @@ export default function Analyze() {
         imageUrl: imageUrl || undefined,
       } as any
       const res = await api.analyze(data)
-      navigate(`/result/${res.data.analysis.id}`)
+      navigate('/result/' + res.data.analysis.id)
     } catch (e: any) {
-      setError('❌ เกิดข้อผิดพลาด: ' + e.message)
+      setError('เกิดข้อผิดพลาด: ' + e.message)
     } finally {
       setLoading(false)
     }
@@ -64,11 +62,10 @@ export default function Analyze() {
   return (
     <div>
       <div className="page-header">
-        <h1>📝 กรอกข้อมูลสุขภาพ</h1>
-        <p>กรอกข้อมูลเพื่อให้ AI ประเมินความเสี่ยง (ขั้นตอนที่ 2 จาก 3)</p>
+        <h1>กรอกข้อมูลสุขภาพ</h1>
+        <p>กรอกข้อมูลเพื่อให้ AI ประเมินความเสี่ยง</p>
       </div>
 
-      {/* AI Badge */}
       <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span style={{ fontSize: '1.5rem' }}>🤖</span>
         <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — คำนวณจาก BMI, อายุ, อาการ และประวัติแพทย์</span>
@@ -77,7 +74,7 @@ export default function Analyze() {
       <div className="card">
         {imageUrl && (
           <div style={{ marginBottom: '1rem' }}>
-            <img src={imageUrl} alt="รูปที่อัปโหลด" style={{ maxWidth: '120px', borderRadius: '8px' }} />
+            <img src={imageUrl} alt="uploaded" style={{ maxWidth: '120px', borderRadius: '8px' }} />
           </div>
         )}
 
@@ -99,26 +96,22 @@ export default function Analyze() {
         </div>
 
         <div className="form-group">
-          <label>อาการปัจจุบัน * <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(อธิบายอาการที่พบ)</span></label>
+          <label>อาการปัจจุบัน *</label>
           <textarea value={form.symptoms} onChange={(e) => set('symptoms', e.target.value)} rows={3}
-            placeholder="เช่น เหนื่อยง่าย, ปวดหัว, เวียนหัว, เจ็บหน้าอก, หายใจไม่ออก..." />
+            placeholder="เช่น เหนื่อยง่าย, ปวดหัว, เวียนหัว, เจ็บหน้าอก..." />
         </div>
 
         <div className="form-group">
-          <label>ประวัติการแพทย์ <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ถ้ามี)</span></label>
+          <label>ประวัติการแพทย์ (ถ้ามี)</label>
           <textarea value={form.medicalHistory} onChange={(e) => set('medicalHistory', e.target.value)} rows={2}
             placeholder="โรคประจำตัว, ยาที่ทานอยู่..." />
         </div>
 
-        {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px' }}>{error}</p>}
+        {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px' }}>❌ {error}</p>}
 
         <button className="btn btn-primary" onClick={submit} disabled={loading}
           style={{ width: '100%', fontSize: '1.1rem', padding: '0.85rem' }}>
-          {loading ? (
-            <span>🤖 AI กำลังวิเคราะห์...</span>
-          ) : (
-            <span>🔍 ให้ AI ประเมินความเสี่ยง</span>
-          )}
+          {loading ? '🤖 AI กำลังวิเคราะห์...' : '🔍 ให้ AI ประเมินความเสี่ยง'}
         </button>
       </div>
     </div>
