@@ -25,8 +25,14 @@ export class AIService {
           await ai.run(model as any, { prompt: 'agree' })
           console.log(`[AI-Service] License agreement submitted. Retrying original model call...`)
           return await ai.run(model as any, payload)
-        } catch (agreeErr) {
-          console.error('[AI-Service] Failed to auto-agree to license:', agreeErr)
+        } catch (agreeErr: any) {
+          const agreeMsg = String(agreeErr.message || agreeErr)
+          if (agreeMsg.includes('Thank you for agreeing') || agreeMsg.includes('You may now use the model')) {
+            console.log(`[AI-Service] License agreement confirmed. Retrying original model call...`)
+            return await ai.run(model as any, payload)
+          } else {
+            console.error('[AI-Service] Failed to auto-agree to license:', agreeErr)
+          }
         }
       }
       throw err
