@@ -149,10 +149,7 @@ export default function Analyze() {
         <p>กรอกข้อมูลเพื่อให้ AI ประเมินความเสี่ยง</p>
       </div>
 
-      <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span style={{ fontSize: '1.5rem' }}>🤖</span>
-        <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — ใช้ OpenAI gpt-oss-20b ประเมินจาก BMI, อายุ, อาการ และประวัติแพทย์</span>
-      </div>
+
 
       <div className="card">
         {imageUrl && (
