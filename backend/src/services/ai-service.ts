@@ -28,6 +28,7 @@ export class AIService {
       const imageBytes = data.imageUrl ? dataURItoUint8Array(data.imageUrl) : null
 
       if (imageBytes) {
+        console.log(`[AI-Service] Image detected! Size: ${imageBytes.length} bytes. Running vision model: @cf/meta/llama-3.2-11b-vision-instruct`);
         // Use vision model when image is available
         response = await ai.run('@cf/meta/llama-3.2-11b-vision-instruct', {
           prompt: `${prompt}\nโปรดพิจารณารูปภาพที่แนบมาประกอบการวิเคราะห์สุขภาพและระบุในปัจจัยเสี่ยง/คำแนะนำด้วยหากพบสิ่งผิดปกติจากภาพ`,
@@ -35,6 +36,7 @@ export class AIService {
           max_tokens: 1200,
         })
       } else {
+        console.log(`[AI-Service] No image provided or failed to parse. Running text model: @cf/meta/llama-3.1-8b-instruct`);
         // Fallback to text model when no image is present
         response = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
           messages: [
