@@ -41,6 +41,8 @@ export default function Analyze() {
   const loggedInUserId = localStorage.getItem('userId') || ''
   const [otherText, setOtherText] = useState('')
   const [showOtherInput, setShowOtherInput] = useState(false)
+  const [predicting, setPredicting] = useState(false)
+  const [predictionDone, setPredictionDone] = useState(false)
 
   const [form, setForm] = useState({
     age: '',
@@ -68,6 +70,28 @@ export default function Analyze() {
       })
       .finally(() => setProfileLoading(false))
   }, [loggedInUserId])
+
+  useEffect(() => {
+    if (!imageUrl) return
+
+    setPredicting(true)
+    setPredictionDone(false)
+    api.predictMeasurements(imageUrl)
+      .then(res => {
+        if (res.data) {
+          setForm(prev => ({
+            ...prev,
+            height: String(res.data.height),
+            weight: String(res.data.weight),
+          }))
+          setPredictionDone(true)
+        }
+      })
+      .catch(err => {
+        console.warn('AI measurements prediction failed:', err)
+      })
+      .finally(() => setPredicting(false))
+  }, [imageUrl])
 
   const toggleHealthItem = (item: string) => {
     setForm(prev => {
@@ -125,15 +149,25 @@ export default function Analyze() {
         <p>กรอกข้อมูลเพื่อให้ AI ประเมินความเสี่ยง</p>
       </div>
 
-      <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span style={{ fontSize: '1.5rem' }}>🤖</span>
-        <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — ใช้ OpenAI gpt-oss-20b ประเมินจาก BMI, อายุ, อาการ และประวัติแพทย์</span>
-      </div>
+
 
       <div className="card">
         {imageUrl && (
           <div style={{ marginBottom: '1rem' }}>
             <img src={imageUrl} alt="uploaded" style={{ maxWidth: '120px', borderRadius: '8px' }} />
+          </div>
+        )}
+
+        {predicting && (
+          <div style={{ background: '#f3f4f6', color: '#4b5563', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+            <span>⏳</span>
+            <span>AI กำลังประเมินและคาดเดาส่วนสูง/น้ำหนักจากรูปภาพของคุณ...</span>
+          </div>
+        )}
+        {predictionDone && (
+          <div style={{ background: '#ecfdf5', color: '#047857', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+            <span>✅</span>
+            <span>AI ได้คาดเดาส่วนสูงและน้ำหนักจากภาพแล้ว (คุณสามารถแก้ไขเพิ่มเติมได้ตามจริง)</span>
           </div>
         )}
 

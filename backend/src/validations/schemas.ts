@@ -25,8 +25,8 @@ export const UpdateUserSchema = z.object({
 })
 
 export const CreateHealthRecordSchema = z.object({
-  userId: z.string().uuid('Invalid user ID'),
-  imageUrl: z.string().url().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  imageUrl: z.string().optional(),
   age: z.number().int().min(0).max(150),
   gender: GenderEnum,
   weight: z.number().positive('Weight must be positive').max(500),
@@ -40,15 +40,15 @@ export const CreateHealthRecordSchema = z.object({
 })
 
 export const HistoryQuerySchema = z.object({
-  userId: z.string().uuid('Invalid user ID').optional(),
+  userId: z.string().optional(),
 })
 
 export const AnalysisIdParamSchema = z.object({
-  id: z.string().uuid('Invalid analysis ID'),
+  id: z.string().min(1, 'Invalid analysis ID'),
 })
 
 export const UserIdParamSchema = z.object({
-  userId: z.string().uuid('Invalid user ID'),
+  userId: z.string().min(1, 'Invalid user ID'),
 })
 
 export type CreateUserInput = z.infer<typeof CreateUserSchema>
