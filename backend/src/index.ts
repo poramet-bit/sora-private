@@ -10,7 +10,15 @@ export interface Env {
   CORS_ORIGIN: string
 }
 
-const app = new Hono<{ Bindings: Env }>()
+export type AppEnv = {
+  Bindings: Env
+  Variables: {
+    validatedBody: unknown
+    validatedQuery: Record<string, unknown>
+  }
+}
+
+const app = new Hono<AppEnv>()
 
 // Middleware
 app.use('*', logger())
