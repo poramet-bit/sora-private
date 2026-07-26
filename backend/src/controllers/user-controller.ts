@@ -61,9 +61,4 @@ export class UserController {
     if (!updated) return c.json({ error: 'User not found' }, 404)
     return c.json({ data: updated })
   }
-
-  async listUsers(c: Context<{ Bindings: Env }>) {
-    const users = await this.repo.findAll()
-    return c.json({ data: users })
-  }
 }

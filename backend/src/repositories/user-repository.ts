@@ -3,11 +3,6 @@ import type { User, CreateUserDTO } from '../models/types'
 export class UserRepository {
   constructor(private db: D1Database) {}
 
-  async findAll(): Promise<User[]> {
-    const { results } = await this.db.prepare('SELECT id, name, email, age, gender, created_at FROM users ORDER BY created_at DESC').all()
-    return results as unknown as User[]
-  }
-
   async findById(id: string): Promise<User | null> {
     return await this.db.prepare('SELECT id, name, email, age, gender, created_at FROM users WHERE id = ?').bind(id).first() as unknown as User | null
   }

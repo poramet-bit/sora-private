@@ -10,7 +10,6 @@ apiRoutes.post('/login', (c) => new UserController(c).loginByEmail(c))
 apiRoutes.get('/profile/:userId', (c) => new UserController(c).getProfile(c))
 apiRoutes.post('/profile', (c) => new UserController(c).createProfile(c))
 apiRoutes.patch('/profile/:userId', (c) => new UserController(c).updateProfile(c))
-apiRoutes.get('/users', (c) => new UserController(c).listUsers(c))
 
 // Upload route
 apiRoutes.post('/upload', (c) => new HealthController(c).upload(c))
