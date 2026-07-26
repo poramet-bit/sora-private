@@ -39,6 +39,8 @@ export default function Analyze() {
   const [error, setError] = useState<string | null>(null)
   const [showHealthPicker, setShowHealthPicker] = useState(false)
   const loggedInUserId = localStorage.getItem('userId') || ''
+  const [otherText, setOtherText] = useState('')
+  const [showOtherInput, setShowOtherInput] = useState(false)
 
   const [form, setForm] = useState({
     age: '',
@@ -79,6 +81,14 @@ export default function Analyze() {
     })
   }
 
+  // Combine preset selections with optional free-text อื่นๆ
+  const allSelectedItems = [
+    ...form.healthItems,
+    ...(showOtherInput && otherText.trim() ? [otherText.trim()] : []),
+  ]
+
+  const pickerLabel = allSelectedItems.length ? allSelectedItems.join(', ') : 'ไม่มี'
+
   const submit = async () => {
     if (!form.age || !form.weight || !form.height) {
       setError('กรุณากรอกอายุ น้ำหนัก และส่วนสูง')
@@ -88,14 +98,15 @@ export default function Analyze() {
     setError(null)
     try {
       const userId = loggedInUserId || getGuestId()
+      const symptomsValue = allSelectedItems.length ? allSelectedItems.join(', ') : 'ไม่มี'
       const data: AnalysisData = {
         userId,
         age: Number(form.age),
         gender: form.gender,
         weight: Number(form.weight),
         height: Number(form.height),
-        symptoms: form.healthItems.length ? form.healthItems.join(', ') : 'ไม่มี',
-        medicalHistory: form.healthItems.length ? form.healthItems.join(', ') : 'ไม่มี',
+        symptoms: symptomsValue,
+        medicalHistory: symptomsValue,
         imageUrl: imageUrl || undefined,
       } as any
       const res = await api.analyze(data)
@@ -169,7 +180,7 @@ export default function Analyze() {
             onClick={() => setShowHealthPicker(true)}
             style={{ width: '100%', justifyContent: 'space-between', textAlign: 'left' }}
           >
-            {form.healthItems.length ? form.healthItems.join(', ') : 'ไม่มี'}
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pickerLabel}</span>
             <span>▾</span>
           </button>
         </div>
@@ -207,7 +218,7 @@ export default function Analyze() {
             <button
               type="button"
               className="btn btn-outline"
-              onClick={() => set('healthItems', [])}
+              onClick={() => { set('healthItems', []); setShowOtherInput(false); setOtherText('') }}
               style={{ width: '100%', marginBottom: '0.75rem' }}
             >
               ไม่มี
@@ -236,6 +247,50 @@ export default function Analyze() {
                   <span>{item}</span>
                 </label>
               ))}
+
+              {/* อื่นๆ option */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  padding: '0.65rem 0.75rem',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  background: showOtherInput ? '#eff6ff' : 'white',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={showOtherInput}
+                  onChange={() => {
+                    setShowOtherInput(prev => !prev)
+                    if (showOtherInput) setOtherText('')
+                  }}
+                />
+                <span>อื่นๆ</span>
+              </label>
+
+              {/* Free-text input shown when อื่นๆ is checked */}
+              {showOtherInput && (
+                <input
+                  type="text"
+                  autoFocus
+                  value={otherText}
+                  onChange={e => setOtherText(e.target.value)}
+                  placeholder="ระบุอาการหรือประวัติอื่นๆ..."
+                  style={{
+                    padding: '0.65rem 0.75rem',
+                    border: '1px solid var(--primary, #6366f1)',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              )}
             </div>
 
             <button
