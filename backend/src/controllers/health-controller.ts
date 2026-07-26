@@ -1,20 +1,20 @@
 import type { Context } from 'hono'
-import type { Env } from '../index'
+import type { AppEnv } from '../index'
 import { HealthRepository } from '../repositories/health-repository'
 import { AnalysisService } from '../services/analysis-service'
 import { AIService } from '../services/ai-service'
-import type { CreateHealthRecordDTO } from '../models/types'
+import type { CreateHealthRecordInput, HistoryQueryInput } from '../validations/schemas'
 
 export class HealthController {
   private repo: HealthRepository
   private ruleBased = new AnalysisService()
   private aiService = new AIService()
 
-  constructor(c: Context<{ Bindings: Env }>) {
+  constructor(c: Context<AppEnv>) {
     this.repo = new HealthRepository(c.env.DB)
   }
 
-  async upload(c: Context<{ Bindings: Env }>) {
+  async upload(c: Context<AppEnv>) {
     const body = await c.req.parseBody()
     const file = body['image'] as File | undefined
     if (!file) return c.json({ error: 'No image provided' }, 400)
@@ -32,23 +32,16 @@ export class HealthController {
     return c.json({ data: { imageUrl: dataUrl, filename: file.name, size: file.size } })
   }
 
-  async analyze(c: Context<{ Bindings: Env }>) {
+  async analyze(c: Context<AppEnv>) {
     try {
-      const body = await c.req.json<CreateHealthRecordDTO>()
+      const body = c.get('validatedBody') as CreateHealthRecordInput
 
-      if (!body.userId || !body.symptoms) {
-        return c.json({ error: 'userId and symptoms are required' }, 400)
-      }
-
-      // Save health record
       const record = await this.repo.createRecord(body)
 
-      // Calculate BMI
       const heightM = body.height / 100
       const bmi = body.weight / (heightM * heightM)
       const bmiRounded = Math.round(bmi * 10) / 10
 
-      // Try AI analysis first, fall back to rule-based
       let riskLevel: string
       let riskScore: number
       let recommendations: string[]
@@ -71,7 +64,6 @@ export class HealthController {
         factors = ruleResult.factors
       }
 
-      // Save analysis result
       const analysisResult = await this.repo.createAnalysis({
         id: crypto.randomUUID(),
         healthRecordId: record.id,
@@ -101,8 +93,8 @@ export class HealthController {
     }
   }
 
-  async getHistory(c: Context<{ Bindings: Env }>) {
-    const userId = c.req.query("userId") || ""
+  async getHistory(c: Context<AppEnv>) {
+    const { userId } = c.get('validatedQuery') as HistoryQueryInput
     if (!userId) {
       return c.json({ data: [] })
     }
@@ -110,12 +102,11 @@ export class HealthController {
     return c.json({ data: history })
   }
 
-  async getAnalysis(c: Context<{ Bindings: Env }>) {
+  async getAnalysis(c: Context<AppEnv>) {
     const id = c.req.param('id')!
     const raw = await this.repo.findAnalysisById(id)
     if (!raw) return c.json({ error: 'Analysis not found' }, 404)
 
-    // D1 returns snake_case columns — map to camelCase for frontend
     const r: any = raw
     const analysis: any = {
       id: r.id,
@@ -150,7 +141,6 @@ export class HealthController {
       // record lookup may fail
     }
 
-    // Parse factors and recommendations back to arrays
     const factors = analysis.factors ? analysis.factors.split('\n').filter(Boolean) : []
     const recommendations = analysis.recommendations ? analysis.recommendations.split('\n').filter(Boolean) : []
 

@@ -1,32 +1,26 @@
 import type { Context } from 'hono'
-import type { Env } from '../index'
+import type { AppEnv } from '../index'
 import { UserRepository } from '../repositories/user-repository'
 import { hashWithSalt, verifyPassword } from '../utils/crypto'
-import type { CreateUserDTO } from '../models/types'
+import type { CreateUserInput, LoginInput, UpdateUserInput } from '../validations/schemas'
 
 export class UserController {
   private repo: UserRepository
 
-  constructor(c: Context<{ Bindings: Env }>) {
+  constructor(c: Context<AppEnv>) {
     this.repo = new UserRepository(c.env.DB)
   }
 
-  async getProfile(c: Context<{ Bindings: Env }>) {
-    const userId = c.req.param("userId")!
+  async getProfile(c: Context<AppEnv>) {
+    const userId = c.req.param('userId')!
     const user = await this.repo.findById(userId)
     if (!user) return c.json({ error: 'User not found' }, 404)
     const { password, ...safeUser } = user as any
     return c.json({ data: safeUser })
   }
 
-  async createProfile(c: Context<{ Bindings: Env }>) {
-    const body = await c.req.json<CreateUserDTO>()
-    if (!body.name || !body.email || !body.password) {
-      return c.json({ error: 'name, email และ password จำเป็นต้องกรอก' }, 400)
-    }
-    if (body.password.length < 6) {
-      return c.json({ error: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร' }, 400)
-    }
+  async createProfile(c: Context<AppEnv>) {
+    const body = c.get('validatedBody') as CreateUserInput
     const existing = await this.repo.findByEmail(body.email)
     if (existing) return c.json({ error: 'อีเมลนี้ถูกใช้งานแล้ว' }, 409)
 
@@ -35,11 +29,8 @@ export class UserController {
     return c.json({ data: user }, 201)
   }
 
-  async loginByEmail(c: Context<{ Bindings: Env }>) {
-    const body = await c.req.json<{ email: string; password: string }>()
-    if (!body.email || !body.password) {
-      return c.json({ error: 'กรุณากรอกอีเมลและรหัสผ่าน' }, 400)
-    }
+  async loginByEmail(c: Context<AppEnv>) {
+    const body = c.get('validatedBody') as LoginInput
 
     const user = await this.repo.findByEmail(body.email)
     if (!user) return c.json({ error: 'ไม่พบบัญชีที่ใช้อีเมลนี้' }, 404)
@@ -54,9 +45,9 @@ export class UserController {
     return c.json({ data: safeUser })
   }
 
-  async updateProfile(c: Context<{ Bindings: Env }>) {
-    const userId = c.req.param("userId")!
-    const body = await c.req.json<Partial<CreateUserDTO>>()
+  async updateProfile(c: Context<AppEnv>) {
+    const userId = c.req.param('userId')!
+    const body = c.get('validatedBody') as UpdateUserInput
     const updated = await this.repo.update(userId, body)
     if (!updated) return c.json({ error: 'User not found' }, 404)
     return c.json({ data: updated })
