@@ -170,8 +170,14 @@ ${bpStr}${hrStr}${tempStr}อาการ: ${data.symptoms}
         max_tokens: 150,
       }) as any
 
-      const text: string = response?.response || response?.result?.response || response?.choices?.[0]?.message?.content || ''
-      if (!text) return null
+      console.log(`[AI-Service] Raw response from vision model:`, response)
+      const textRaw = response?.response || response?.result?.response || response?.choices?.[0]?.message?.content || ''
+      const text = typeof textRaw === 'string' ? textRaw : JSON.stringify(textRaw) || ''
+
+      if (!text || text.length < 2) {
+        console.warn(`[AI-Service] Empty text returned from model`)
+        return null
+      }
 
       // Extract JSON from AI response
       const jsonMatch = text.match(/\{[\s\S]*?\}/)
