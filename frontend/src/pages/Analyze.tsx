@@ -2,14 +2,22 @@ import { useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { api, type AnalysisData } from '../services/api'
 
+// Generate a guest ID for anonymous users
+function getGuestId(): string {
+  let id = localStorage.getItem('guestId')
+  if (!id) {
+    id = 'guest-' + crypto.randomUUID()
+    localStorage.setItem('guestId', id)
+  }
+  return id
+}
+
 export default function Analyze() {
   const location = useLocation()
   const navigate = useNavigate()
   const imageUrl = (location.state as any)?.imageUrl || null
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const userId = localStorage.getItem('userId') || ''
 
   const [form, setForm] = useState({
     age: 30,
@@ -23,10 +31,6 @@ export default function Analyze() {
   const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }))
 
   const submit = async () => {
-    if (!userId) {
-      setError('⚠️ กรุณาสร้างโปรไฟล์ก่อน (ไปที่หน้าโปรไฟล์)')
-      return
-    }
     if (!form.symptoms.trim()) {
       setError('⚠️ กรุณาอธิบายอาการอย่างน้อย 1 อาการ')
       return
@@ -34,6 +38,8 @@ export default function Analyze() {
     setLoading(true)
     setError(null)
     try {
+      // Use real userId if logged in, otherwise use guest ID
+      const userId = localStorage.getItem('userId') || getGuestId()
       const data: AnalysisData = {
         ...form,
         userId,
@@ -75,17 +81,6 @@ export default function Analyze() {
           </div>
         )}
 
-        {!userId && (
-          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fcd34d' }}>
-            <p style={{ margin: 0, color: '#92400e' }}>
-              ⚠️ ยังไม่ได้เข้าสู่ระบบ —{' '}
-              <Link to="/profile" style={{ fontWeight: 600, color: '#92400e', textDecoration: 'underline' }}>
-                คลิกที่นี่เพื่อสร้างโปรไฟล์
-              </Link>
-            </p>
-          </div>
-        )}
-
         <div className="form-row-3">
           {numInput('อายุ (ปี)', 'age')}
           <div className="form-group">
@@ -117,7 +112,7 @@ export default function Analyze() {
 
         {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px' }}>{error}</p>}
 
-        <button className="btn btn-primary" onClick={submit} disabled={loading || !userId}
+        <button className="btn btn-primary" onClick={submit} disabled={loading}
           style={{ width: '100%', fontSize: '1.1rem', padding: '0.85rem' }}>
           {loading ? (
             <span>🤖 AI กำลังวิเคราะห์...</span>
