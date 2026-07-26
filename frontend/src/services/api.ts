@@ -73,4 +73,6 @@ export const api = {
     request<{ data: any[] }>(`/history?userId=${userId}`),
   getAnalysis: (id: string) =>
     request<{ data: AnalysisResult }>(`/analysis/${id}`),
+  predictMeasurements: (imageUrl: string) =>
+    request<{ data: { height: number; weight: number } }>('/predict-measurements', { method: 'POST', body: JSON.stringify({ imageUrl }) }),
 }
