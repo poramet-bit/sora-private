@@ -2,6 +2,25 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api, type AnalysisData } from '../services/api'
 
+const healthOptions = [
+  'ปวดหัว',
+  'เวียนหัว',
+  'เหนื่อยง่าย',
+  'เจ็บหน้าอก',
+  'หายใจไม่ออก',
+  'คลื่นไส้',
+  'อาเจียน',
+  'มีไข้',
+  'ไอ',
+  'ปวดท้อง',
+  'นอนไม่หลับ',
+  'เบาหวาน',
+  'ความดันโลหิตสูง',
+  'โรคหัวใจ',
+  'ภูมิแพ้',
+  'โรคหอบหืด',
+]
+
 function getGuestId(): string {
   let id = localStorage.getItem('guestId')
   if (!id) {
@@ -17,21 +36,33 @@ export default function Analyze() {
   const imageUrl = (location.state as any)?.imageUrl || null
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showHealthPicker, setShowHealthPicker] = useState(false)
 
   const [form, setForm] = useState({
-    age: 30,
+    age: '',
     gender: 'male',
-    weight: 70,
-    height: 170,
-    symptoms: '',
-    medicalHistory: '',
+    weight: '',
+    height: '',
+    healthItems: [] as string[],
   })
 
-  const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }))
+  const set = (key: string, value: string | string[]) => setForm(prev => ({ ...prev, [key]: value }))
+
+  const toggleHealthItem = (item: string) => {
+    setForm(prev => {
+      const exists = prev.healthItems.includes(item)
+      return {
+        ...prev,
+        healthItems: exists
+          ? prev.healthItems.filter(value => value !== item)
+          : [...prev.healthItems, item],
+      }
+    })
+  }
 
   const submit = async () => {
-    if (!form.symptoms.trim()) {
-      setError('กรุณาอธิบายอาการอย่างน้อย 1 อาการ')
+    if (!form.age || !form.weight || !form.height) {
+      setError('กรุณากรอกอายุ น้ำหนัก และส่วนสูง')
       return
     }
     setLoading(true)
@@ -39,8 +70,13 @@ export default function Analyze() {
     try {
       const userId = localStorage.getItem('userId') || getGuestId()
       const data: AnalysisData = {
-        ...form,
         userId,
+        age: Number(form.age),
+        gender: form.gender,
+        weight: Number(form.weight),
+        height: Number(form.height),
+        symptoms: form.healthItems.length ? form.healthItems.join(', ') : 'ไม่มี',
+        medicalHistory: form.healthItems.length ? form.healthItems.join(', ') : 'ไม่มี',
         imageUrl: imageUrl || undefined,
       } as any
       const res = await api.analyze(data)
@@ -52,13 +88,6 @@ export default function Analyze() {
     }
   }
 
-  const numInput = (label: string, key: keyof typeof form) => (
-    <div className="form-group">
-      <label>{label}</label>
-      <input type="number" value={form[key] as number} onChange={(e) => set(key, Number(e.target.value))} />
-    </div>
-  )
-
   return (
     <div>
       <div className="page-header">
@@ -68,7 +97,7 @@ export default function Analyze() {
 
       <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span style={{ fontSize: '1.5rem' }}>🤖</span>
-        <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — คำนวณจาก BMI, อายุ, อาการ และประวัติแพทย์</span>
+        <span><strong>AI จะวิเคราะห์ข้อมูลของคุณ</strong> — ใช้ OpenAI gpt-oss-20b ประเมินจาก BMI, อายุ, อาการ และประวัติแพทย์</span>
       </div>
 
       <div className="card">
@@ -79,7 +108,10 @@ export default function Analyze() {
         )}
 
         <div className="form-row-3">
-          {numInput('อายุ (ปี)', 'age')}
+          <div className="form-group">
+            <label>อายุ (ปี)</label>
+            <input type="number" value={form.age} onChange={(e) => set('age', e.target.value)} placeholder="0" />
+          </div>
           <div className="form-group">
             <label>เพศ</label>
             <select value={form.gender} onChange={(e) => set('gender', e.target.value)}>
@@ -88,23 +120,30 @@ export default function Analyze() {
               <option value="other">อื่นๆ</option>
             </select>
           </div>
-          {numInput('น้ำหนัก (กก.)', 'weight')}
+          <div className="form-group">
+            <label>น้ำหนัก (กก.)</label>
+            <input type="number" value={form.weight} onChange={(e) => set('weight', e.target.value)} placeholder="0" />
+          </div>
         </div>
 
         <div className="form-row">
-          {numInput('ส่วนสูง (ซม.)', 'height')}
+          <div className="form-group">
+            <label>ส่วนสูง (ซม.)</label>
+            <input type="number" value={form.height} onChange={(e) => set('height', e.target.value)} placeholder="0" />
+          </div>
         </div>
 
         <div className="form-group">
-          <label>อาการปัจจุบัน *</label>
-          <textarea value={form.symptoms} onChange={(e) => set('symptoms', e.target.value)} rows={3}
-            placeholder="เช่น เหนื่อยง่าย, ปวดหัว, เวียนหัว, เจ็บหน้าอก..." />
-        </div>
-
-        <div className="form-group">
-          <label>ประวัติการแพทย์ (ถ้ามี)</label>
-          <textarea value={form.medicalHistory} onChange={(e) => set('medicalHistory', e.target.value)} rows={2}
-            placeholder="โรคประจำตัว, ยาที่ทานอยู่..." />
+          <label>อาการ / ประวัติการรักษา <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(ถ้ามี)</span></label>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => setShowHealthPicker(true)}
+            style={{ width: '100%', justifyContent: 'space-between', textAlign: 'left' }}
+          >
+            {form.healthItems.length ? form.healthItems.join(', ') : 'ไม่มี'}
+            <span>▾</span>
+          </button>
         </div>
 
         {error && <p style={{ color: 'var(--danger)', marginBottom: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '8px' }}>❌ {error}</p>}
@@ -114,6 +153,74 @@ export default function Analyze() {
           {loading ? '🤖 AI กำลังวิเคราะห์...' : '🔍 ให้ AI ประเมินความเสี่ยง'}
         </button>
       </div>
+
+      {showHealthPicker && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowHealthPicker(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            background: 'rgba(15, 23, 42, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 'min(520px, 100%)', maxHeight: '80vh', overflow: 'auto' }}
+          >
+            <h3 style={{ marginBottom: '0.75rem' }}>เลือกอาการ / ประวัติการรักษา</h3>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => set('healthItems', [])}
+              style={{ width: '100%', marginBottom: '0.75rem' }}
+            >
+              ไม่มี
+            </button>
+
+            <div style={{ display: 'grid', gap: '0.5rem' }}>
+              {healthOptions.map(item => (
+                <label
+                  key={item}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    padding: '0.65rem 0.75rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    background: form.healthItems.includes(item) ? '#eff6ff' : 'white',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.healthItems.includes(item)}
+                    onChange={() => toggleHealthItem(item)}
+                  />
+                  <span>{item}</span>
+                </label>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setShowHealthPicker(false)}
+              style={{ width: '100%', marginTop: '1rem' }}
+            >
+              ยืนยัน
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

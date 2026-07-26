@@ -51,9 +51,13 @@ export default function Upload() {
               <button className="btn btn-outline" onClick={() => fileRef.current?.click()} style={{ marginRight: '0.5rem' }}>
                 เลือกรูปใหม่
               </button>
-              <Link to="/analyze" state={{ imageUrl }} className="btn btn-primary">
-                ถัดไป →
-              </Link>
+              <button
+                className="btn btn-primary"
+                disabled={uploading}
+                onClick={() => navigate('/analyze', { state: { imageUrl: imageUrl || preview } })}
+              >
+                {uploading ? 'กำลังเตรียมรูป...' : 'ถัดไป →'}
+              </button>
             </div>
           </div>
         ) : (
