@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api, type AnalysisData } from '../services/api'
 
@@ -35,8 +35,10 @@ export default function Analyze() {
   const navigate = useNavigate()
   const imageUrl = (location.state as any)?.imageUrl || null
   const [loading, setLoading] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showHealthPicker, setShowHealthPicker] = useState(false)
+  const loggedInUserId = localStorage.getItem('userId') || ''
 
   const [form, setForm] = useState({
     age: '',
@@ -47,6 +49,23 @@ export default function Analyze() {
   })
 
   const set = (key: string, value: string | string[]) => setForm(prev => ({ ...prev, [key]: value }))
+
+  useEffect(() => {
+    if (!loggedInUserId) return
+
+    setProfileLoading(true)
+    api.getProfile(loggedInUserId)
+      .then(res => {
+        setForm(prev => ({
+          ...prev,
+          age: String(res.data.age || ''),
+        }))
+      })
+      .catch(() => {
+        localStorage.removeItem('userId')
+      })
+      .finally(() => setProfileLoading(false))
+  }, [loggedInUserId])
 
   const toggleHealthItem = (item: string) => {
     setForm(prev => {
@@ -68,7 +87,7 @@ export default function Analyze() {
     setLoading(true)
     setError(null)
     try {
-      const userId = localStorage.getItem('userId') || getGuestId()
+      const userId = loggedInUserId || getGuestId()
       const data: AnalysisData = {
         userId,
         age: Number(form.age),
@@ -110,7 +129,16 @@ export default function Analyze() {
         <div className="form-row-3">
           <div className="form-group">
             <label>อายุ (ปี)</label>
-            <input type="number" value={form.age} onChange={(e) => set('age', e.target.value)} placeholder="0" />
+            <input
+              type="number"
+              value={form.age}
+              onChange={(e) => set('age', e.target.value)}
+              placeholder={profileLoading ? 'กำลังโหลด...' : '0'}
+              readOnly={!!loggedInUserId}
+            />
+            {loggedInUserId && (
+              <small style={{ color: 'var(--text-muted)' }}>ใช้อายุจากบัญชีที่ล็อกอิน</small>
+            )}
           </div>
           <div className="form-group">
             <label>เพศ</label>
