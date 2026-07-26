@@ -28,11 +28,9 @@ export default function About() {
         <h3 style={{ marginBottom: '0.5rem', fontSize: '1.1rem' }}>🤖 ปัจจัยที่ AI วิเคราะห์</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
           <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>⚖️ BMI (น้ำหนัก/ส่วนสูง)</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🫀 ความดันโลหิต</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>❤️ อัตราการเต้นหัวใจ</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🌡️ อุณหภูมิร่างกาย</div>
           <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🎂 อายุ</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🩺 อาการที่พบ</div>
+          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🩺 อาการ / ประวัติการรักษา</div>
+          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>📷 รูปภาพประกอบ</div>
         </div>
 
         <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>

@@ -85,11 +85,9 @@ export default function Home() {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
           <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>⚖️ ค่า BMI (น้ำหนัก/ส่วนสูง)</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🫀 ความดันโลหิต</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>❤️ อัตราการเต้นหัวใจ</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🌡️ อุณหภูมิร่างกาย</div>
           <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🎂 อายุ</div>
-          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🩺 อาการที่พบ</div>
+          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>🩺 อาการ / ประวัติการรักษา</div>
+          <div style={{ padding: '0.5rem', background: 'var(--bg)', borderRadius: '8px' }}>📷 รูปภาพประกอบ</div>
         </div>
       </div>
 
