@@ -1,4 +1,5 @@
 import type { CreateHealthRecordDTO, RiskLevel } from '../models/types'
+import { dataURItoUint8Array } from '../utils/image'
 
 export interface AIAnalysisOutput {
   riskLevel: RiskLevel
@@ -11,7 +12,7 @@ export interface AIAnalysisOutput {
 
 export class AIService {
   /**
-   * Call Cloudflare Workers AI (Llama 3.1) to analyze health data
+   * Call Cloudflare Workers AI to analyze health data (supporting visual analysis if image is provided)
    */
   async analyzeWithAI(ai: Ai, data: CreateHealthRecordDTO, bmi: number): Promise<{
     riskLevel: RiskLevel
@@ -23,16 +24,29 @@ export class AIService {
     const prompt = this.buildPrompt(data, bmi)
 
     try {
-      const response = await ai.run('@cf/openai/gpt-oss-20b', {
-        messages: [
-          {
-            role: 'system',
-            content: 'คุณเป็นผู้ช่วยวิเคราะห์สุขภาพ AI จงตอบเป็นภาษาไทย วิเคราะห์ข้อมูลสุขภาพและให้คำแนะนำ'
-          },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 1200,
-      }) as any
+      let response: any = null
+      const imageBytes = data.imageUrl ? dataURItoUint8Array(data.imageUrl) : null
+
+      if (imageBytes) {
+        // Use vision model when image is available
+        response = await ai.run('@cf/meta/llama-3.2-11b-vision-instruct', {
+          prompt: `${prompt}\nโปรดพิจารณารูปภาพที่แนบมาประกอบการวิเคราะห์สุขภาพและระบุในปัจจัยเสี่ยง/คำแนะนำด้วยหากพบสิ่งผิดปกติจากภาพ`,
+          image: Array.from(imageBytes),
+          max_tokens: 1200,
+        })
+      } else {
+        // Fallback to text model when no image is present
+        response = await ai.run('@cf/meta/llama-3.1-8b-instruct', {
+          messages: [
+            {
+              role: 'system',
+              content: 'คุณเป็นผู้ช่วยวิเคราะห์สุขภาพ AI จงตอบเป็นภาษาไทย วิเคราะห์ข้อมูลสุขภาพและให้คำแนะนำ'
+            },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 1200,
+        })
+      }
 
       const text: string = response?.response || response?.result?.response || response?.choices?.[0]?.message?.content || ''
       if (!text || text.length < 10) return null
