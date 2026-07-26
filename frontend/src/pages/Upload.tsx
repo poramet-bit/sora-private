@@ -2,6 +2,41 @@ import { useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { api } from '../services/api'
 
+async function compressImage(file: File): Promise<{ file: File; dataUrl: string }> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('ไม่สามารถอ่านรูปภาพได้'))
+    reader.readAsDataURL(file)
+  })
+
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('ไม่สามารถโหลดรูปภาพได้'))
+    img.src = dataUrl
+  })
+
+  const maxSide = 1280
+  const scale = Math.min(1, maxSide / Math.max(image.width, image.height))
+  const width = Math.max(1, Math.round(image.width * scale))
+  const height = Math.max(1, Math.round(image.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('ไม่สามารถประมวลผลรูปภาพได้')
+
+  ctx.drawImage(image, 0, 0, width, height)
+  const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82)
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(value => value ? resolve(value) : reject(new Error('ไม่สามารถบีบอัดรูปภาพได้')), 'image/jpeg', 0.82)
+  })
+  const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' })
+
+  return { file: compressedFile, dataUrl: compressedDataUrl }
+}
+
 export default function Upload() {
   const [preview, setPreview] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -14,14 +49,18 @@ export default function Upload() {
     setError(null)
     setUploading(true)
     try {
-      const reader = new FileReader()
-      reader.onload = (e) => setPreview(e.target?.result as string)
-      reader.readAsDataURL(file)
+      const prepared = await compressImage(file)
+      setPreview(prepared.dataUrl)
+      setImageUrl(prepared.dataUrl)
 
-      const res = await api.uploadImage(file)
-      setImageUrl(res.data.imageUrl)
+      try {
+        const res = await api.uploadImage(prepared.file)
+        setImageUrl(res.data.imageUrl)
+      } catch (uploadError) {
+        console.warn('Server image upload failed, using compressed local preview instead.', uploadError)
+      }
     } catch (e: any) {
-      setError(e.message)
+      setError(e.message || 'ไม่สามารถเตรียมรูปภาพได้')
     } finally {
       setUploading(false)
     }
